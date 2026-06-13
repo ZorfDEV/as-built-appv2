@@ -12,6 +12,7 @@ import api from "@/lib/api";
 import { POINT_COLUMNS } from "@/components/table/column-presets"
 import WidgetContainer from "@/components/widget-container";
 import { Info ,TriangleAlert,ClockFading,ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const duree = 60000; // 1 minute en millisecondes
 
@@ -127,6 +128,28 @@ const clearSelection = () => {
     </div>
   )}
     <div className="flex flex-1 flex-col gap-4 p-4">
+      <div className="flex items:center justify-between">
+        <div>
+          <h1 className="font-semibold">Tableau de bord des incidents</h1>
+          <p className="text-sm text-muted-foreground">
+            Suivi en temps réel — Janvier · Décembre 2026
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="pbtn">
+            7j
+          </Button>
+          <Button variant="outline" className="pbtn">
+            1m
+          </Button>
+          <Button variant="outline" className="pbtn">
+            3m
+          </Button>
+          <Button variant="outline" className="pbtn active">
+            1an
+          </Button>
+        </div>
+      </div>
           <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
               <WidgetContainer link="points/incidents/total" title="Total coupures BNG"  refreshInterval={duree} icon={ <Info className="h-4 w-4"/> }  variant="purple" />
 

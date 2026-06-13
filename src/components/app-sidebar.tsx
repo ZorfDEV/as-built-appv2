@@ -7,12 +7,13 @@ import {
   Settings2,
   Users,
   Layers,
+  Activity,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 //import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-//import { TeamSwitcher } from "@/components/team-switcher"
+import { sidebarData } from "@/datatypes/sidebar-data"
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +21,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { LogoMenu } from "./logo-menu"
 
 const data = {
  
@@ -52,6 +54,11 @@ const data = {
       icon: Users,
     },
     {
+      title: "Statut liens",
+      url: "/dashboard/reports",
+      icon: Activity,
+    },
+    {
       title: "Settings",
       url: "/dashboard/settings",
       icon: Settings2,
@@ -67,7 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-       
+       <LogoMenu teams={sidebarData.teams} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} title={""} />

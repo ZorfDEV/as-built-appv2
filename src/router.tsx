@@ -20,6 +20,7 @@ import EditSection from './pages/Sections/edit-section';
 import AddMarqueur from './pages/Marqueurs/add-marqueur';
 import ViewMarqueur from './pages/Marqueurs/view-marqueur';
 import EditMarqueur from './pages/Marqueurs/edit-marqueur';
+import Report from './pages/observium/report';
 import { useParams } from 'react-router-dom';
 
 function EditSectionWrapper() {
@@ -37,6 +38,8 @@ function AppRouter() {
          {/* Routes protégée pour le dashboard */}
           <Route path="/dashboard" element={<PrivateRoute><DashboardLayout/></PrivateRoute>}>
                 <Route path="/dashboard/map" element={<MapPage />} />
+                  { /* Routes vers observium */}
+            <Route path="/dashboard/reports" element={<Report />} />
                 { /* Routes pour les points */}
                 <Route path="/dashboard/points" element={<ListPoints />} />
                  <Route path="/dashboard/add-point" element={<AddPoint />} />

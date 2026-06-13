@@ -12,7 +12,7 @@ export default function DashboardLayout() {
   return (
     <ThemeProvider>
       <SidebarProvider>
-        <AppSidebar className="z-9999" />
+      <AppSidebar className="z-9999" />
       <SidebarInset >
         <Header fixed />
         <div className="flex-1 min-h-screen z-0 bg-background"> 
