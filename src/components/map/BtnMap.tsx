@@ -1,114 +1,142 @@
-import {useState} from 'react'
-//import { Button } from "@/components/ui/button" 
-import  ButtonMain  from "@/components/button-main"
+import { useState } from 'react'
 import {
-  ButtonGroup
-} from "@/components/ui/button-group"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader,
+  AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import {Globe, Scissors} from "lucide-react"
-import { Input } from "../ui/input"
+import { Input } from "@/components/ui/input"
+import { Scissors, Route, Globe } from "lucide-react"
 
+function BtnMap({
+  handleSubmit,
+  handleRoute,
+}: {
+  handleSubmit: (lat: string | null, lon: string | null) => void
+  handleRoute: (pointA: string, pointB: string) => void
+}) {
+  const [lat, setLat] = useState<string | null>(null)
+  const [lon, setLon] = useState<string | null>(null)
+  const [pointAName, setPointAName] = useState("")
+  const [pointBName, setPointBName] = useState("")
 
-function BtnMap({ handleSubmit }: { handleSubmit: (lat: string | null, lon: string | null) => void; handleRoute: (pointA: string , pointB: string ) => void }) {
-
-  //const user = JSON.parse(localStorage.getItem("user") || "null");
-  const [lat, setLat] = useState<string | null>(null);
-  const [lon, setLon] = useState<string | null>(null);
   return (
-    <div className="absolute top-4 right-40 z-2000  ">
-    <div className="flex flex-col sm:flex-row gap-4 sm:justify-center ">
-    <ButtonGroup orientation="horizontal" className="w-full" >
-      <AlertDialog>
-      <AlertDialogTrigger asChild>
-    <ButtonMain actioname="destructive" type="button" label='Ajouter incident'> 
-     <div className="flex items-center -space-x-3 translate-x-3">
-     <Scissors className="h-5 w-5 font-bold -translate-x-2 transition duration-300 group-hover:translate-x-0" />
-    <div className="w-2.5 h-[1.6px] rounded bg-white origin-left scale-x-0 transition duration-300 group-hover:scale-x-100"></div>
+    <div className="absolute top-4 right-40 z-2000">
+
+      {/* ── Groupe de boutons ── */}
+      <div className="flex items-center rounded-[10px] overflow-hidden border border-border bg-background shadow-sm">
+
+        {/* Bouton Créer PI */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              className="
+                flex items-center gap-2 px-4 h-10
+                bg-[#D85A30] hover:bg-[#993C1D]
+                text-white text-sm font-medium
+                transition-colors duration-150
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D85A30]/50
+              "
+            >
+              <Scissors className="h-4 w-4 shrink-0" />
+              Créer PI
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogMedia>
+                <span className="relative flex size-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex size-3 rounded-full bg-red-500" />
+                </span>
+              </AlertDialogMedia>
+              <AlertDialogTitle>Ajouter un point d'incident</AlertDialogTitle>
+              <AlertDialogDescription>
+                Saisissez les coordonnées du point d'incident à ajouter.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-3 px-4 py-2">
+              <div className="relative">
+                <Input
+                  placeholder="Latitude (N/S)"
+                  className="pr-10"
+                  onChange={(e) => setLat(e.target.value)}
+                />
+                <Globe className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              </div>
+              <div className="relative">
+                <Input
+                  placeholder="Longitude (E/W)"
+                  className="pr-10"
+                  onChange={(e) => setLon(e.target.value)}
+                />
+                <Globe className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleSubmit(lat, lon)}>
+                Ajouter
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Séparateur vertical */}
+        <div className="w-px h-10 bg-border" />
+
+        {/* Bouton Itinéraire */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              className="
+                flex items-center gap-2 px-4 h-10
+                bg-background hover:bg-muted
+                text-sm font-medium text-foreground
+                transition-colors duration-150
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+              "
+            >
+              <Route className="h-4 w-4 shrink-0 text-emerald-600" />
+              Itinéraire
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogMedia>
+                <span className="relative flex size-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
+                </span>
+              </AlertDialogMedia>
+              <AlertDialogTitle>Itinéraire</AlertDialogTitle>
+              <AlertDialogDescription>
+                Saisissez le point de départ et d'arrivée pour calculer l'itinéraire.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-3 px-4 py-2">
+              <Input
+                placeholder="Point de départ"
+                onChange={(e) => setPointAName(e.target.value)}
+              />
+              <Input
+                placeholder="Point d'arrivée"
+                onChange={(e) => setPointBName(e.target.value)}
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleRoute(pointAName, pointBName)}>
+                Calculer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+      </div>
     </div>
-    </ButtonMain>
-    </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogMedia>
-           <span className="relative flex size-3 cursor-pointer" >
-               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex  items-center justify-center text-[8px] text-white p-1 size-3 rounded-full bg-red-500"></span>
-              </span>
-          </AlertDialogMedia>
-          <AlertDialogTitle>Ajouter un point d'incident</AlertDialogTitle>
-          <AlertDialogDescription>
-            Saisissez les coordonnées du point d'incident à ajouter.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-       <form className="p-4 items-center justify-center">
-  <div className="grid grid-cols-1 gap-3 p-3">
-
-    {/* Latitude */}
-    <div className="relative">
-      <Input
-        name="lat"
-        type="text"
-        placeholder="Latitude"
-        className="pr-10"
-        onChange={(e) => setLat(e.target.value)}
-        required
-      />
-
-      <Globe
-        className="
-          absolute right-3 top-1/2
-          h-4 w-4
-          -translate-y-1/2
-          text-muted-foreground
-          pointer-events-none
-        "
-      />
-    </div>
-
-    {/* Longitude */}
-    <div className="relative">
-      <Input
-        name="lon"
-        type="text"
-        placeholder="Longitude"
-        className="pr-10"
-        onChange={(e) => setLon(e.target.value)}
-      />
-
-      <Globe
-        className="
-          absolute right-3 top-1/2
-          h-4 w-4
-          -translate-y-1/2
-          text-muted-foreground
-          pointer-events-none
-        "
-      />
-    </div>
-
-  </div>
-</form>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={() => handleSubmit(lat, lon)} type="submit">Ajouter</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-</ButtonGroup>
-    </div>
-    </div>
-
   )
 }
 

@@ -16,7 +16,6 @@ import {
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button";
-//import ButtonMain  from "@/components/button-main"
 import {getString } from "@/interfaces/pointInterface"
 import {useSections} from "@/hooks/useSections"
 import {useMarqueurs} from "@/hooks/useMarqueurs"
@@ -127,7 +126,7 @@ function isValidCoords(lat: number, lng: number): boolean {
     lat <= 90 &&
     lng >= -180 &&
     lng <= 180 &&
-    !(lat === 0 && lng === 0) // Reject null-island (likely empty field)
+    !(lat === 0 && lng === 0) 
   )
 }
 
@@ -156,10 +155,8 @@ function parseCoords(
 
   // Fallback: try DMS parsing only if values look like strings
   if (typeof rawLat === 'string' || typeof rawLng === 'string') {
-    //const combined = `${rawLat ?? ''} ${rawLng ?? ''}`
     const latitudeconv: number | null = convertDMSToDecimal(rawLat ? String(rawLat) : '')
     const longitudeconv: number | null = convertDMSToDecimal(rawLng ? String(rawLng) : '')
-    ///const dms = convertDMS(combined)
     lat = latitudeconv ?? NaN
     lng = longitudeconv ?? NaN
 
@@ -214,6 +211,9 @@ const optionsNatures: optionsNature[] = [
   { value: "borne-réperage", label: "Borne de réperage" },
   { value: "chambre", label: "Chambre" },
   { value: "incident", label: "Incident" },
+  { value: "gare", label: "Gare" },
+  { value: "ct", label: "Centre Technique" },
+  { value: "signalisation", label: "Signalisation" },
 ];
 
 const optionsStatuses: optionsStatus[] = [
@@ -231,8 +231,7 @@ const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
   const lonDMS = getString(formData, "longitude").trim()
  const latitudeconv: number | null = convertDMSToDecimal(latDMS)
  const longitudeconv: number | null = convertDMSToDecimal(lonDMS)
- console.log("DEBUG coords:", { latDMS, lonDMS, latitudeconv, longitudeconv })
-
+ 
     if (
       latitudeconv === null ||
       longitudeconv === null ||
@@ -246,6 +245,11 @@ const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
       toast.error("Coordonnées invalides")
       return
     }
+    if (!user) {
+      toast.error("Utilisateur non connecté")
+      return
+    }
+
     const pointData: CreatePointData = {
       name: getString(formData, "name"),
       longitude: longitudeconv,
@@ -258,25 +262,20 @@ const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
       status: getString(formData, "status") 
     }
 
-    console.log('Données du formulaire avant envoi:', pointData);
- try {
+    try {
      
       const response = await api.post('/points', pointData);
-      console.log('Point ajouté avec succès', response.data);
+      console.warn('Point ajouté avec succès', response.data);
       toast.success('Point ajouté avec succès');
       navigate(-1);
       if (onPointsUpdated) {
         onPointsUpdated();
       }
     } catch {
-      //console.log('Erreur ajout point', pointData);
       toast.error("Erreur lors de l'ajout du point");
     }
 
 }
-
-// Logique d'upload de fichier Excel
-
  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
@@ -321,9 +320,6 @@ const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
             user_id: row.user_id as string | number | undefined,
           })
         })
-
-        console.log('Validation complète', { valid, errs })
-
         setAllRows(rows)
         setValidRows(valid)
         setErrors(errs)
@@ -352,13 +348,10 @@ const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
       toast.warning(`Corrige les ${errors.length} erreur(s) avant l'upload.`)
       return
     }
- console.log('données envoyées complètes', { validRows, errors })
     try {
       setLoading(true)
       const res = await api.post<{ count: number }>('/points/bulk', validRows)
       toast.success(`Upload réussi : ${res.data.count} points enregistrés.`)
-
-      // Use prop callback instead of global window event
       onPointsUpdated?.()
       navigate(-1)
     } catch (err) {
@@ -426,7 +419,6 @@ const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
               </Field>
             </FieldGroup>
             </div>
-             {/* Divider desktop */}
         <div className="hidden xl:flex items-center justify-center">
            <div className="h-full w-px bg-border shrink-0 relative">
                <Button variant="outline" className=" absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full  flex items-center justify-center ">
@@ -434,7 +426,6 @@ const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
                             </Button>
                           </div>
                         </div>
-
                         {/* RIGHT SIDE */}
                         <div className="space-y-6">
                           <SectionTitle

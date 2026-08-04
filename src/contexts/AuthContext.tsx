@@ -3,119 +3,102 @@ import {
   useContext,
   useEffect,
   useState,
- type ReactNode,
-} from "react"
-import { jwtDecode } from "jwt-decode"
+  useCallback,
+  type ReactNode,
+} from "react";
+import api from "@/lib/api";
 
-///////////////////////////////////////////////////////////////
-// Types
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface DecodedToken {
-  avatar: string
-  id: string
-  email?: string
-  name?: string
-  exp: number
-}
-
-interface User {
-  id: string
-  email: string
-  name: string
-  avatar: string
+export interface User {
+  id:       string;
+  publicId: string;
+  name:     string;
+  email:    string;
+  avatar:   string;
+  isActive: boolean;
+  role:     string;
+  status:   string;
 }
 
 interface AuthContextType {
-  user: User 
-  token: string | null
-  login: (jwt: string) => void
-  logout: () => void
+  user:     User | null;
+  loading:  boolean;
+  login:    (email: string, password: string) => Promise<void>;
+  logout:   () => Promise<void>;
+  setUser:  (user: User | null) => void; // utile pour updateMe
 }
 
-///////////////////////////////////////////////////////////////
-// Context
+// ─── Context ──────────────────────────────────────────────────────────────────
 
-const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-///////////////////////////////////////////////////////////////
-// Provider
+// ─── Provider ─────────────────────────────────────────────────────────────────
 
-interface AuthProviderProps {
-  children: ReactNode
-}
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user,    setUser]    = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // true le temps de vérifier la session
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token")
-  )
-
+  //  Vérifie la session au montage — le cookie est envoyé automatiquement
   useEffect(() => {
-    if (!token) {
-      setUser(null)
-      return
-    }
+  let cancelled = false; // ✅ évite les setState sur composant démonté
 
+  api.get<User>("/auth/me")
+    .then(({ data }) => {
+      if (!cancelled) setUser(data);
+    })
+    .catch((err) => {
+      if (!cancelled) {
+        // ✅ Ne redirige PAS ici — laisse PrivateRoute gérer
+        setUser(null);
+        // Log uniquement si ce n'est pas un 401 normal
+        if (err.response?.status !== 401) {
+          console.error("Erreur auth/me:", err.message);
+        }
+      }
+    })
+    .finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+
+  return () => { cancelled = true; };
+}, []);
+
+  //  Login — reçoit les infos user depuis le serveur (plus de jwtDecode)
+  const login = useCallback(async (email: string, password: string) => {
+    const { data } = await api.post<{ user: User }>("/auth/login", {
+      email,
+      password,
+    });
+    setUser(data.user);
+  }, []);
+
+  // ✅ Logout — efface le cookie côté serveur
+  const logout = useCallback(async () => {
     try {
-      const decoded = jwtDecode<DecodedToken>(token)
-
-      if (!decoded?.exp || !decoded?.id) {
-        throw new Error("Token structure invalide")
-      }
-
-      const expirationDate = new Date(decoded.exp * 1000)
-
-      if (expirationDate < new Date()) {
-        console.warn("Token expiré")
-        logout()
-        return
-      }
-
-      setUser({
-        id: decoded.id,
-        email: decoded.email ?? "",
-        name: decoded.name ?? "",
-        avatar:decoded.avatar || "",
-      })
-
-      localStorage.setItem("token", token)
-    } catch (err) {
-      console.error("Échec décodage token :", err)
-      logout()
+      await api.post("/auth/logout");
+    } catch {
+      // Continue même si le serveur ne répond pas
+    } finally {
+      setUser(null);
+      window.location.href = "/login";
     }
-  }, [token])
-
-  const login = (jwt: string) => {
-    setToken(jwt)
-  }
-
-  const logout = () => {
-    setUser(null)
-    setToken(null)
-    localStorage.removeItem("token")
-  }
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user: user!, token, login, logout }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
-///////////////////////////////////////////////////////////////
-// Hook
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext)
-
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within AuthProvider")
+    throw new Error("useAuth doit être utilisé dans AuthProvider");
   }
-
-  return context
+  return context;
 }

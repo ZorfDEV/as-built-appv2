@@ -9,6 +9,7 @@ import type { Section } from "@/datatypes"
 import { fetchSectionById  } from "@/interfaces/sectionService"
 import { useUpdateSection } from "@/hooks/useUpdateSection"
 import { Textarea } from "@/components/ui/textarea"
+import { Grid2X2 } from "lucide-react"
 
 type EditSectionFormValues = Section
 
@@ -56,6 +57,7 @@ function EditSection({ id, onSuccess }: { id: string; onSuccess: () => void }) {
 
       await update(id, data)
       onSuccess()
+      window.location.reload();
     }
   
     // Affichage de l'erreur si ID manquant ou chargement échoué
@@ -81,6 +83,8 @@ function EditSection({ id, onSuccess }: { id: string; onSuccess: () => void }) {
                   <FloatingInput
                     label="Nom"
                     {...register("name", { required: "Le nom est requis" })}
+                     labelclassName="peer-focus:bg-white  dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80 "
+              icon={<Grid2X2 className="h-4 w-4 text-emerald-400" />}
                   />
                   {errors.name && (
                     <p className="text-sm text-destructive">{errors.name.message}</p>

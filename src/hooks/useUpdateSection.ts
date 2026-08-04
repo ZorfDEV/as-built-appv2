@@ -2,7 +2,7 @@
 // src/hooks/useUpdatePoint.ts
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+//import { useNavigate } from "react-router-dom"
 import { updateSection } from "@/interfaces/sectionService"
 import { toast } from "sonner"
 import type { Section } from "@/datatypes"
@@ -10,7 +10,7 @@ import type { Section } from "@/datatypes"
 export function useUpdateSection() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const navigate = useNavigate()
+  //const navigate = useNavigate()
 
   const update = async (id: string, data: Section) => {
     setLoading(true)
@@ -20,9 +20,8 @@ export function useUpdateSection() {
       await updateSection(id, data)
 
       toast.success("Section mise à jour avec succès")
-
       //redirect automatique
-      navigate('dashboard/sections')
+       window.location.reload();
 
     } catch (err: any) {
       const message =

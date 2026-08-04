@@ -22,10 +22,7 @@ import {
 } from "@/components/ui/table"
 
 import { Button } from "@/components/ui/button"
-//import  ButtonMain  from "@/components/button-main"
 import { ArrowUpDown ,Plus} from "lucide-react"
-//import { ButtonGroup,ButtonGroupSeparator } from "@/components/ui/button-group"
-//import { motion, AnimatePresence } from "framer-motion"
 import ExportExcel from "@/components/ExportExcel"
 import { DataTablePagination } from "./table/pagination"
 import { DataTableBulkActions } from "@/components/data-table-bulk-actions"
@@ -36,12 +33,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   actionadd?: () => void
   fileNames?: string
- // handleDelete: (id: string) => void
-  //handleView: (id: string) => void
-  //handleEdit: (id: string) => void
   handleDeleteSelected: () => void
- // toggleSelect: (id: string) => void
-  //selectAll: (ids: string[]) => void
   title?: string
 }
 
@@ -77,9 +69,6 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
 
   })
-
-  //const selectedCount = table.getFilteredSelectedRowModel().rows.length
-  //const navigate = useNavigate();
 
   return (
     <div>

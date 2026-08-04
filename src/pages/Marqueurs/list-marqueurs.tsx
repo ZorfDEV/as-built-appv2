@@ -33,16 +33,11 @@ function ListMarqueurs() {
  const [editingId, setEditingId] = useState<string | null>(null)
  const [openDialog, setOpenDialog] = useState(false);
 const navigate = useNavigate();
-
  const handeleAdd = () => {
-  setEditingId(null);
-  setOpenDialog(true);
+setEditingId(null);
+setOpenDialog(true);
 }
 const handleEdit = useCallback((id: string) => { 
-    if (!id) {
-      console.error("ID manquant pour l'édition");
-      return;
-    }
     setEditingId(id);
     setOpenDialog(true);
   }, []);
@@ -73,10 +68,9 @@ const handleEdit = useCallback((id: string) => {
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="flex  items-center justify-center"><span>{editingId ? "Modifier la marqueur" : "Ajouter une marqueur"}</span></DialogTitle>
+              <DialogTitle className="flex  items-center justify-center"><span>{editingId ? "Modifier le marqueur" : "Ajouter une marqueur"}</span></DialogTitle>
             
             </DialogHeader>
-            {/* Vous pouvez réutiliser le composant de formulaire d'édition ici */}
             {editingId ? (
               <EditMarqueur id={editingId} onSuccess={() => {
                 setOpenDialog(false);
@@ -134,10 +128,10 @@ const handleEdit = useCallback((id: string) => {
           <CardFooter >
             <div className="absolute bottom-2 right-2">
           <ButtonGroup >
-           <Button variant="outline" size="sm" onClick={() => handleEdit(marqueur._id)}>
+           <Button type='button' variant="outline" size="sm" onClick={() => handleEdit(marqueur.publicId)}>
           <SquarePen />
         </Button>
-        <Button variant="outline" size="icon-sm" onClick={() => handelDelete(marqueur._id)}>
+        <Button type='button' variant="outline" size="icon-sm" onClick={() => handelDelete(marqueur.publicId)}>
           <Trash2Icon  />
         </Button>
       </ButtonGroup>

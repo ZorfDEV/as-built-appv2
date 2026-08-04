@@ -7,8 +7,6 @@ export const fetchMarqueurs = async (): Promise<marqueur[]> => {
   return res.data
 }
 
-
-// Création avec fichier
 export const createMarqueur = async (data: {
   name: string
   description?: string
@@ -23,7 +21,6 @@ export const createMarqueur = async (data: {
   return res.data
 }
 
-// ✅ Mise à jour avec fichier optionnel
 export const updateMarqueur = async (
   id: string,
   data: { name?: string; description?: string; file?: string|File }
@@ -31,12 +28,12 @@ export const updateMarqueur = async (
   const formData = new FormData()
   if (data.name)        formData.append("name", data.name)
   if (data.description !== undefined) formData.append("description", data.description)
-  if (data.file)        formData.append("file", data.file)  // ✅ seulement si un nouveau fichier
-  console.log("Données envoyées pour mise à jour du marqueur :", {
+  if (data.file)        formData.append("file", data.file)  
+ /* console.log("Données envoyées pour mise à jour du marqueur :", {
     name: data.name,
     description: data.description,
-    file: data.file instanceof File ? data.file.name : data.file, // Affiche le nom du fichier ou l'URL
-  })
+    file: data.file instanceof File ? data.file.name : data.file, 
+  })*/
   const res = await api.put<CreateMarqueurData>(`/marqueurs/${id}`, formData)
   return res.data
 }

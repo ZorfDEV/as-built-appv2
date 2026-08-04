@@ -1,26 +1,23 @@
-import axios from "axios"
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/api",
-})
+  baseURL:"/api",
+  withCredentials: true, 
+});
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token")
-
-  if (token) {
-    config.headers = config.headers ?? {} // 🔥 FIX CRITIQUE
-    config.headers.Authorization = `Bearer ${token}`
-
-    // debug safe
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]))
-      console.log("JWT payload:", payload)
-    } catch {
-      console.warn("Token invalide")
+// ─── Intercepteur de réponse ──────────────────────────────────────────────────
+// Redirige vers /login si le serveur retourne 401
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Evite la boucle infinie sur la page de login elle-même
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
     }
+    return Promise.reject(error);
   }
+);
 
-  return config
-})
-
-export default api
+export default api;

@@ -24,7 +24,12 @@ export default function ClusterMap({ points, checkpoints, markers }: ClusterMapP
     return (
       <MapContainer center={[point.latitude, point.longitude]} zoom={12} style={{ height: "400px", width: "100%" }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[point.latitude, point.longitude]}>
+        <Marker position={[point.latitude, point.longitude]}
+         icon={new L.Icon({
+                      iconUrl: point.marqueur_id?.file ? `/api${point.marqueur_id.file}` : '/default.png',
+                      iconSize: [30, 30],
+                      iconAnchor: [15, 30],
+                    })} >
           <Popup>{point.description}</Popup>
         </Marker>
       </MapContainer>

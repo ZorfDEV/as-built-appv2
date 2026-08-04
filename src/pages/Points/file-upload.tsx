@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx'
 
 const PAGE_SIZE = 10
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isValidLatLng(lat: any, lng: any): boolean {
   const latNum = Number(lat)
   const lngNum = Number(lng)
@@ -16,6 +17,7 @@ function App() {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [allRows, setAllRows] = useState<any[]>([])
   const [page, setPage] = useState(0)
   const [errors, setErrors] = useState<string[]>([])
@@ -40,6 +42,7 @@ function App() {
 
       // Validation
       const errs: string[] = []
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       json.forEach((row: any, idx: number) => {
         const lat = row.lat || row.latitude
         const lng = row.lng || row.longitude

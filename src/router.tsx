@@ -10,7 +10,7 @@ import ListSections from '@/pages/Sections/list-sections';
 import ListUsers from '@/pages/Auth/list-users';
 import  ProfilePage from '@/pages/Auth/profile';
 import SettingsPage from '@/pages/settings';
-import PrivateRoute from '@/pages/Auth/PrivateRoute';
+import {PrivateRoute ,PublicRoute} from '@/pages/Auth/PrivateRoute';
 import { AddPoint } from './pages/Points/add-point';
 import EditPoint from './pages/Points/edit-point';
 import ViewPoint from './pages/Points/view-point';
@@ -22,6 +22,8 @@ import ViewMarqueur from './pages/Marqueurs/view-marqueur';
 import EditMarqueur from './pages/Marqueurs/edit-marqueur';
 import Report from './pages/observium/report';
 import { useParams } from 'react-router-dom';
+import ListDevices from './pages/observium/ListDevices';
+import AdminRoute from '@/components/admin-route'
 
 function EditSectionWrapper() {
   const { id } = useParams<{ id: string }>();
@@ -35,11 +37,13 @@ function AppRouter() {
         <Route path="/" element={<Login />}/>
         <Route path="*" element={<NotFound />} />
         <Route path="/login" element={<Login />} />
+        <Route element={<PublicRoute />}></Route>
          {/* Routes protégée pour le dashboard */}
           <Route path="/dashboard" element={<PrivateRoute><DashboardLayout/></PrivateRoute>}>
                 <Route path="/dashboard/map" element={<MapPage />} />
                   { /* Routes vers observium */}
             <Route path="/dashboard/reports" element={<Report />} />
+            <Route path="/dashboard/devices" element={<ListDevices />} />
                 { /* Routes pour les points */}
                 <Route path="/dashboard/points" element={<ListPoints />} />
                  <Route path="/dashboard/add-point" element={<AddPoint />} />
@@ -47,9 +51,9 @@ function AppRouter() {
                 <Route path="/dashboard/point/edit/:id" element={<EditPoint />} />
                 <Route path="/dashboard/incidents" element={<ListIncidents />} />
                   { /* Routes pour les utilisateurs */}
-                <Route path="/dashboard/users" element={<ListUsers />} />
+                <Route path="/dashboard/users" element={<AdminRoute><ListUsers /></AdminRoute>} />
                 <Route path="/dashboard/user/view/:id" element={<ProfilePage/>} />
-                <Route path="/dashboard/settings" element={<SettingsPage />} />
+                <Route path="/dashboard/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
                 <Route index element={<Navigate to="/dashboard/map" />} />
                 { /* Routes pour les sections */}
           <Route path="/dashboard/sections" element={<ListSections />} />

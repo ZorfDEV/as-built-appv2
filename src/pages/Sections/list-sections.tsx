@@ -43,7 +43,7 @@ const navigate = useNavigate();
     api.delete(`/sections/${id}`)
         .then(() => {
             toast.success("Section supprimé avec succès");
-            navigate("/dashboard/sections");
+            window.location.reload();
         })
         .catch(error => {
             if (error?.response?.status === 403) {
@@ -54,30 +54,24 @@ const navigate = useNavigate();
             console.error("Erreur lors de la suppression :", error);
         });
         
-}, [navigate]);
+}, []);
 
-// Afficher les détails du Section
 const handleView = useCallback((id: string) => {
-  //console.log("ID à afficher :", id);
   navigate(`/dashboard/Section/view/${id}`);
 }, [navigate]);
 
-// Implémentez la logique pour éditer le Section
 const handleEdit = useCallback((id: string) => {
-  //console.log("ID à éditer :", id);
   setEditingId(id);
   setOpenDialog(true);
 }, []);
- 
 
-// Sélection de lignes
 const toggleSelect = (id: string) => {
   setSelectedIds(prev =>
     prev.includes(id)
       ? prev.filter(i => i !== id)
       : [...prev, id]
   )
-  console.log("ID sélectionné :", id);
+  //console.log("ID sélectionné :", id);
   
 }
 

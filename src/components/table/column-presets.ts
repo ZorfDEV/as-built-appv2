@@ -1,9 +1,6 @@
-// components/table/column-presets.ts
-// ✅ Colonnes préconfigurées par type de données
-
 import { renderDate, renderRelation, renderRole, renderStatus, renderText } from "./cell-renderers"
 import type { ColumnConfig } from "@/datatypes/table-types"
-import type { Point, Section, User, marqueur } from "@/datatypes"
+import type { Point, Section, User, marqueur,Device } from "@/datatypes"
 
 // -- Point --
 export const POINT_COLUMNS: ColumnConfig<Point>[] = [
@@ -18,7 +15,7 @@ export const POINT_COLUMNS: ColumnConfig<Point>[] = [
 
 // -- User --
 export const USER_COLUMNS: ColumnConfig<User>[] = [
-  { key: "avatar",   header: "Avatar",   render: renderText },
+  //{ key: "avatar",   header: "Avatar",   render: renderText },
   { key: "name",   header: "Nom",    render: renderText },
   { key: "email",  header: "Email",  render: renderText },
   { key: "role",   header: "Rôle",   render: renderRole,   hideIfEmpty: true },
@@ -39,4 +36,12 @@ export const MARQUEUR_COLUMNS: ColumnConfig<marqueur>[] = [
   { key: "name",      header: "Nom",       render: renderText },
   { key: "file",      header: "Fichier",   render: renderText },
   { key: "createdAt", header: "Créé le",   render: renderDate },
+]
+
+// Devices 
+export const DEVICES_COLUMNS: ColumnConfig<Device>[] = [
+   { key: "deviceId",     header: "ID",    render: renderText },
+  { key: "hostname",      header: "Nom",       render: renderText },
+  { key: "port_id", header: "Port ID", render: renderText },
+  { key: "port_name", header: "Nom du port",   render: renderDate },
 ]

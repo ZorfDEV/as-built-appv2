@@ -1,14 +1,25 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { Spinner } from '@/components/ui/spinner';
 
-export default function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { token } = useAuth();
+export  function PrivateRoute({ children }: { children: React.ReactNode }) {
+  // Inchangé — fonctionne pareil
+const { user, loading } = useAuth();
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+if (loading) return <Spinner />;
+if (!user)   return <Navigate to="/login" />;
 
   return children;
 }
-// This component checks if the user is authenticated by verifying the presence of a token.
+
+export function PublicRoute() {
+  const { user, loading } = useAuth();
+
+  if (loading) return null; // ou un spinner
+
+  // ✅ Si déjà connecté → redirige vers dashboard
+  if (user) return <Navigate to="/dashboard" replace />;
+
+  return <Outlet />;
+}

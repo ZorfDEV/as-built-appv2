@@ -1,4 +1,5 @@
 import * as React from 'react'
+import logo from '@/assets/asbuiltlogoB.svg';
 import { ChevronsUpDown, Plus } from 'lucide-react'
 import {
   DropdownMenu,
@@ -24,10 +25,12 @@ type TeamSwitcherProps = {
   }[]
 }
 
+
+
+
 export function LogoMenu({ teams }: TeamSwitcherProps) {
   const { isMobile } = useSidebar()
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -35,12 +38,12 @@ export function LogoMenu({ teams }: TeamSwitcherProps) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size='lg'
-              className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
+              className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-white'
             >
-              <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
-                <activeTeam.logo className='size-4' />
+              <div className='flex aspect-square size-8 items-center justify-center rounded-full text-white'>
+                <img src={logo} className='size-8' />
               </div>
-              <div className='grid flex-1 text-start text-sm leading-tight'>
+              <div className='grid flex-1 text-start text-sm leading-tight text-white'>
                 <span className='truncate font-semibold'>
                   {activeTeam.name}
                 </span>

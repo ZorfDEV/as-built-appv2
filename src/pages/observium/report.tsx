@@ -5,131 +5,111 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   FileSpreadsheet, FileText, Loader2,
-  Wifi, WifiOff, AlertTriangle, ChevronDown, ChevronUp
+  Link2, WifiOff, AlertTriangle, Wifi,
 } from "lucide-react";
+import { downloadExcel } from "@/services/excelExport";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PortReport {
-  port_id:        string;
-  ifName:         string;
-  alias:          string;
-  operStatus:     "up" | "down" | "unknown";
-  adminStatus:    "up" | "down" | "unknown";
+interface PortStats {
+  hasData:        boolean;
+  operStatus:     string;
+  adminStatus:    string;
   speedMbps:      number;
   human_speed:    string;
-  hasData:        boolean;
-  // P95
   p95InMbps:      number | null;
   p95OutMbps:     number | null;
-  p95UtilInPct:   number | null;  // ex: 8.06
-  p95UtilOutPct:  number | null;  // ex: 6.17
-  utilizationPct: number | null;  // ex: 8.06
-  // Moyenne
+  p95UtilInPct:   number | null;
+  p95UtilOutPct:  number | null;
+  utilizationPct: number | null;
   avgInMbps:      number | null;
   avgOutMbps:     number | null;
-  // Maximum
   maxInMbps:      number | null;
   maxOutMbps:     number | null;
-  // Erreurs
   inErrors:       number;
   outErrors:      number;
   hasErrors:      boolean;
   inDiscards:     number;
   outDiscards:    number;
+  noDataReason?:  string | null;
 }
 
-interface DeviceReport {
-  device_id:    string;
-  hostname:     string;
-  status:       "up" | "down" | "unknown";
-  uptimeHours:  number;
-  availability: number;
-  alertCount:   number;
-  ports:        PortReport[];
+interface LinkReport {
+  link_id:        string;
+  linkLabel:      string;
+  siteA:          string;
+  siteB:          string;
+  hostnameA:      string;
+  hostnameB:      string;
+  portA_id:       string;
+  portB_id:       string | null;
+  portA_name:     string;
+  portB_name:     string;
+  capacityGbps:   number;
+  status:         "UP" | "DOWN" | "PARTIAL" | string;
+  availability: number | null; 
+  utilizationPct: number | null;
+  errors:         string;
+  hasErrors:      boolean;
+  portA:          PortStats;
+  portB:          PortStats | null;
+}
+
+interface SitePairGroup {
+  siteA: string;
+  siteB: string;
+  links: LinkReport[];
 }
 
 interface ReportSummary {
-  totalDevices:     number;
-  devicesUp:        number;
-  devicesDown:      number;
-  avgAvailability:  number;
-  totalPorts:       number;
-  portsUp:          number;
-  portsDown:        number;
-  portsWithErrors:  number;
-  totalErrors:      number;
+  totalLinks:      number;
+  linksUp:         number;
+  linksDown:       number;
+  linksPartial:    number;
+  linksWithErrors: number;
+  avgAvailability: number | null;
+  totalErrors:     number;
 }
 
 interface ReportData {
-  period:      { from: string; to: string };
-  generatedAt: string;
-  summary:     ReportSummary;
-  devices:     DeviceReport[];
+  period:          { from: string; to: string };
+  generatedAt:     string;
+  summary:         ReportSummary;
+  links:           LinkReport[];
+  linksBySitePair: SitePairGroup[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Affiche "—" si la valeur est null, sinon affiche avec unité
-function Val({
-  value,
-  unit = "Mbps",
-  decimals = 2,
-}: {
-  value: number | null;
-  unit?: string;
-  decimals?: number;
-}) {
-  if (value === null || value === undefined) {
-    return <span className="text-muted-foreground">—</span>;
-  }
-  return <span>{Number(value).toFixed(decimals)} {unit}</span>;
-}
-
 function StatusBadge({ status }: { status: string }) {
-  const isUp = status === "up";
+  const map: Record<string, string> = {
+    UP:      "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
+    DOWN:    "bg-red-100    text-red-700    hover:bg-red-100",
+    PARTIAL: "bg-orange-100 text-orange-700 hover:bg-orange-100",
+  };
   return (
-    <Badge
-      className={
-        isUp
-          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-          : status === "unknown"
-          ? "bg-gray-100 text-gray-500 hover:bg-gray-100"
-          : "bg-red-100 text-red-700 hover:bg-red-100"
-      }
-    >
-      {status.toUpperCase()}
+    <Badge className={map[status] ?? "bg-gray-100 text-gray-500"}>
+      {status}
     </Badge>
   );
 }
 
-/*function UtilizationBar({ pct }: { pct: number | null }) {
-  if (pct === null) {
+function AvailabilityCell({ value }: { value: number | null }) {
+  if (value === null || value === undefined) {
     return <span className="text-muted-foreground text-xs">—</span>;
   }
-  const color =
-    pct >= 80 ? "bg-red-500" :
-    pct >= 60 ? "bg-orange-400" :
-    "bg-emerald-500";
+  const isGood = value >= 99;
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color}`}
-          style={{ width: `${Math.min(pct, 100)}%` }}
-        />
-      </div>
-      <span className={`text-xs ${pct >= 80 ? "text-red-500 font-medium" : ""}`}>
-        {pct}%
-      </span>
-    </div>
+    <span className={`font-medium ${isGood ? "text-emerald-600" : "text-red-500"}`}>
+      {value.toFixed(1)}
+    </span>
   );
-}*/
+}
 
-function UtilizationBar({ pct }: { pct: number | null }) {
-  if (pct === null) {
-    return <span className="text-muted-foreground text-xs">—</span>;
-  }
+function UtilizationCell({ pct }: { pct: number | null }) {
+  if (pct === null) return <span className="text-muted-foreground text-xs">—</span>;
+
   const color =
     pct >= 80 ? "bg-red-500" :
     pct >= 60 ? "bg-orange-400" :
@@ -143,7 +123,6 @@ function UtilizationBar({ pct }: { pct: number | null }) {
           style={{ width: `${Math.min(pct, 100)}%` }}
         />
       </div>
-      {/* ✅ Toujours 2 décimales */}
       <span className={`text-xs ${pct >= 80 ? "text-red-500 font-medium" : ""}`}>
         {pct.toFixed(2)}%
       </span>
@@ -151,132 +130,163 @@ function UtilizationBar({ pct }: { pct: number | null }) {
   );
 }
 
-// ─── DeviceCard ───────────────────────────────────────────────────────────────
+// ─── Carte détail port ────────────────────────────────────────────────────────
 
-function DeviceCard({ device }: { device: DeviceReport }) {
-  const [expanded, setExpanded] = useState(true);
+function PortDetail({ port, label }: { port: PortStats | null; label: string }) {
+  if (!port) return null;
+
+  const fmt = (val: number | null) =>
+    val !== null ? `${Number(val).toFixed(2)} Mbps` : "—";
+
+  return (
+    <div className="text-xs space-y-0.5 text-muted-foreground">
+      <p className="font-medium text-foreground">{label}</p>
+      {port.hasData ? (
+        <>
+          <p>P95 ↓ {fmt(port.p95InMbps)} / ↑ {fmt(port.p95OutMbps)}</p>
+          <p>Moy ↓ {fmt(port.avgInMbps)} / ↑ {fmt(port.avgOutMbps)}</p>
+          <p>Max ↓ {fmt(port.maxInMbps)} / ↑ {fmt(port.maxOutMbps)}</p>
+          {(port.inErrors > 0 || port.outErrors > 0) && (
+            <p className="text-orange-500">
+              Erreurs In:{port.inErrors} Out:{port.outErrors}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="italic">{port.noDataReason ?? "Données indisponibles"}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Groupe de liens par paire de sites ──────────────────────────────────────
+
+function SitePairCard({ group }: { group: SitePairGroup }) {
+  const [expandedLink, setExpandedLink] = useState<string | null>(null);
+
+  const toggle = (id: string) =>
+    setExpandedLink((prev) => (prev === id ? null : id));
 
   return (
     <Card className="overflow-hidden">
-      {/* Bandeau device */}
-      <div
-        className="flex items-center justify-between px-5 py-3 bg-[#1a2744] cursor-pointer select-none"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        <div className="flex items-center gap-3">
-          <StatusBadge status={device.status} />
-          <span className="text-white font-medium">{device.hostname}</span>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-slate-300">
-          <span>
-            Dispo :{" "}
-            <strong className={device.availability < 99 ? "text-red-400" : "text-emerald-400"}>
-              {device.availability}%
-            </strong>
-          </span>
-          <span>Uptime : {device.uptimeHours}h</span>
-          <span>Alertes : {device.alertCount}</span>
-          {expanded
-            ? <ChevronUp  className="h-4 w-4" />
-            : <ChevronDown className="h-4 w-4" />
-          }
-        </div>
+      {/* Bandeau paire de sites */}
+      <div className="flex items-center gap-3 px-5 py-3 bg-[#1a2744]">
+        <span className="text-white font-semibold text-sm">{group.siteA}</span>
+        <span className="text-slate-400 text-lg">↔</span>
+        <span className="text-white font-semibold text-sm">{group.siteB}</span>
+        <Badge className="ml-auto bg-slate-700 text-slate-200 hover:bg-slate-700 text-xs">
+          {group.links.length} lien{group.links.length > 1 ? "s" : ""}
+        </Badge>
       </div>
 
-      {/* Tableau des ports */}
-      {expanded && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                {[
-                  "Port",  "Statut", "Vitesse",
-                  "P95 In ↓", "P95 Out ↑",
-                  "Util. P95",
-                  "Err. In", "Err. Out",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {Array.isArray(device.ports) && device.ports.map((port) => (
+      {/* Tableau des liens */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50">
+            <tr>
+              {[
+                "Liens",
+                "BP (Gbps)",
+                "Disponibilité",
+                "Utilisation P95 (%)",
+                "Erreurs",
+                "Statut",
+                "",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="text-left px-4 py-2.5 text-xs font-medium
+                             text-muted-foreground whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {group.links.map((link) => (
+              <>
                 <tr
-                  key={port.port_id}
-                  className={`hover:bg-muted/30 transition-colors ${
-                    port.operStatus === "down"
+                  key={link.link_id}
+                  className={`hover:bg-muted/30 transition-colors cursor-pointer ${
+                    link.status === "DOWN"
                       ? "bg-red-50 dark:bg-red-950/20"
                       : ""
                   }`}
+                  onClick={() => toggle(link.link_id)}
                 >
-                  {/* Port */}
+                  {/* Lien */}
                   <td className="px-4 py-2.5 font-medium whitespace-nowrap">
-                    {port.ifName}
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {link.linkLabel}
+                    </div>
                   </td>
 
+                  {/* Bande passante */}
+                  <td className="px-4 py-2.5 whitespace-nowrap font-medium">
+                    {link.capacityGbps}
+                  </td>
 
-                  {/* Statut */}
+                  {/* Disponibilité */}
                   <td className="px-4 py-2.5">
-                    <StatusBadge status={port.operStatus} />
-                  </td>
-
-                  {/* Vitesse */}
-                  <td className="px-4 py-2.5 whitespace-nowrap text-xs font-medium">
-                    {port.human_speed ?? `${port.speedMbps} Mbps`}
-                  </td>
-
-                  {/* P95 In */}
-                  <td className="px-4 py-2.5 whitespace-nowrap text-blue-600 font-medium">
-                    <Val value={port.p95InMbps} />
-                  </td>
-
-                  {/* P95 Out */}
-                  <td className="px-4 py-2.5 whitespace-nowrap text-purple-600 font-medium">
-                    <Val value={port.p95OutMbps} />
+                    <AvailabilityCell value={link.availability} />
                   </td>
 
                   {/* Utilisation P95 */}
                   <td className="px-4 py-2.5">
-                    <UtilizationBar pct={port.utilizationPct} />
+                    <UtilizationCell pct={link.utilizationPct} />
                   </td>
 
-                  {/* Erreurs In */}
-                  <td className="px-4 py-2.5">
-                    <span className={port.inErrors > 0 ? "text-orange-500 font-medium" : ""}>
-                      {port.inErrors}
+                  {/* Erreurs */}
+                  <td className="px-4 py-2.5 whitespace-nowrap">
+                    <span className={link.hasErrors ? "text-orange-500 font-medium" : ""}>
+                      {link.errors}
                     </span>
                   </td>
 
-                  {/* Erreurs Out */}
+                  {/* Statut */}
                   <td className="px-4 py-2.5">
-                    <span className={port.outErrors > 0 ? "text-orange-500 font-medium" : ""}>
-                      {port.outErrors}
-                    </span>
+                    <StatusBadge status={link.status} />
                   </td>
 
+                  {/* Toggle détail */}
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                    {expandedLink === link.link_id ? "▲ Réduire" : "▼ Détail"}
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
-      {/* Message si aucun port */}
-      {expanded && device.ports.length === 0 && (
-        <div className="px-5 py-4 text-sm text-muted-foreground">
-          Aucun port configuré pour cet équipement.
-        </div>
-      )}
+                {/* Ligne de détail dépliable */}
+                {expandedLink === link.link_id && (
+                  <tr key={`${link.link_id}-detail`} className="bg-muted/20">
+                    <td colSpan={7} className="px-8 py-4">
+                      <div className="grid grid-cols-2 gap-8">
+                        <PortDetail
+                          port={link.portA}
+                          label={`${link.hostnameA} — ${link.portA_name}`}
+                        />
+                        <PortDetail
+                          port={link.portB}
+                          label={
+                            link.portB
+                              ? `${link.hostnameB} — ${link.portB_name}`
+                              : link.hostnameB
+                          }
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
 }
 
-// ─── Composant principal ──────────────────────────────────────────────────────
+// ─── Composant principal:: ──────────────────────────────────────────────────────
 
 export default function Report() {
   const [dateFrom, setDateFrom] = useState("");
@@ -284,6 +294,8 @@ export default function Report() {
   const [report,   setReport]   = useState<ReportData | null>(null);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
+  const today        = new Date().toISOString().split("T")[0];
+const isValidRange = Boolean(dateFrom && dateTo && dateFrom <= dateTo && dateTo <= today);
 
   const fetchReport = async () => {
     if (!dateFrom || !dateTo) return;
@@ -293,16 +305,23 @@ export default function Report() {
       const { data } = await axios.get<ReportData>("/api/report", {
         params: { dateFrom, dateTo },
       });
-
-      if (!data || !Array.isArray(data.devices)) {
+      if (!data || !Array.isArray(data.links)) {
         throw new Error(`Structure inattendue : ${JSON.stringify(data)}`);
       }
 
-      console.log("Rapport reçu :", data);
+      if (data.links.length === 0) {
+        setError(
+          "Aucun lien détecté. Vérifiez que les voisins LLDP sont bien configurés " +
+          "dans Observium et que les hostnames correspondent à votre configuration."
+        );
+        setLoading(false);
+        return;
+      }
 
       setReport(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erreur inconnue";
+      toast.error(`Impossible de récupérer le rapport : ${message}`);
       setError(`Impossible de récupérer le rapport : ${message}`);
     } finally {
       setLoading(false);
@@ -310,10 +329,12 @@ export default function Report() {
   };
 
   const exportFile = (format: "excel" | "pdf") => {
-    window.open(
+   /* window.open(
       `/api/report/export/${format}?dateFrom=${dateFrom}&dateTo=${dateTo}`,
       "_blank"
-    );
+    );*/
+    if(format)
+    toast.success("Le rapport PDF n'est pas encore disponible")
   };
 
   const s = report?.summary;
@@ -325,105 +346,134 @@ export default function Report() {
       <div>
         <h1 className="text-2xl font-semibold">Rapports réseau</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Sélectionne une période pour générer le rapport.
+          Sélectionne une période pour générer le rapport des liens.
         </p>
       </div>
 
-      {/* Sélecteur de période */}
+      {/* Sélecteur de période + actions */}
       <Card>
-        <CardContent className="pt-5">
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">
-                Date de début
-              </label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">
-                Date de fin
-              </label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
+  <CardContent className="pt-5">
+    <div className="flex flex-wrap items-end gap-4">
 
-            <Button
-              onClick={fetchReport}
-              disabled={!dateFrom || !dateTo || loading}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            >
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Générer le rapport
-            </Button>
+      {/* Date de début */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs text-muted-foreground font-medium">
+          Date de début
+        </label>
+        <input
+          type="date"
+          value={dateFrom}
+          max={dateTo || today}
+          onChange={(e) => {
+            setDateFrom(e.target.value)
+            if (dateTo && e.target.value > dateTo) setDateTo("")
+          }}
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+      </div>
 
-            {report && (
-              <>
-                <Button variant="outline" onClick={() => exportFile("excel")} className="gap-2">
-                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                  Export Excel
-                </Button>
-                <Button variant="outline" onClick={() => exportFile("pdf")} className="gap-2">
-                  <FileText className="h-4 w-4 text-red-500" />
-                  Export PDF
-                </Button>
-              </>
-            )}
-          </div>
+      {/* Date de fin */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs text-muted-foreground font-medium">
+          Date de fin
+        </label>
+        <input
+          type="date"
+          value={dateTo}
+          min={dateFrom || undefined}
+          max={today}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+      </div>
 
-          {error && (
-            <p className="text-sm text-red-500 mt-3 bg-red-50 px-3 py-2 rounded-md">
-              {error}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Message d'erreur plage invalide */}
+      {dateFrom && dateTo && !isValidRange && (
+        <p className="text-xs text-red-500 self-center">
+          {dateFrom > dateTo
+            ? "La date de début doit être antérieure à la date de fin."
+            : "La date de fin ne peut pas dépasser aujourd'hui."}
+        </p>
+      )}
 
+      {/* Bouton générer */}
+      <Button
+        onClick={fetchReport}
+        disabled={!isValidRange || loading}
+        className="bg-emerald-500 hover:bg-emerald-600 text-white"
+      >
+        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        Générer le rapport
+      </Button>
+
+      {/* Exports */}
+      {report && (
+        <>
+          <Button
+            variant="outline"
+            onClick={() => downloadExcel(report)}
+            className="gap-2"
+          >
+            <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+            Export Excel
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => exportFile("pdf")}
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4 text-red-500" />
+            Export PDF
+          </Button>
+        </>
+      )}
+    </div>
+
+    {error && (
+      <p className="text-sm text-red-500 mt-3 bg-red-50 dark:bg-red-950/20
+                    px-3 py-2 rounded-md border border-red-200">
+        {error}
+      </p>
+    )}
+  </CardContent>
+</Card>
       {/* Résumé */}
       {s && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             {
               label: "Disponibilité moy.",
-              value: `${s.avgAvailability}%`,
-              icon: Wifi,
+              value: s.avgAvailability != null ? `${s.avgAvailability.toFixed(1)}%` : "N/A",
+              icon:  Wifi,
               color: "text-emerald-500",
-              bg: "bg-emerald-50",
-              alert: s.avgAvailability < 99,
+              bg:    "bg-emerald-50",
+              alert: s.avgAvailability != null && s.avgAvailability < 99,
             },
             {
-              label: "Équipements DOWN",
-              value: s.devicesDown,
-              icon: WifiOff,
+              label: "Liens DOWN",
+              value: s.linksDown,
+              icon:  WifiOff,
               color: "text-red-500",
-              bg: "bg-red-50",
-              alert: s.devicesDown > 0,
+              bg:    "bg-red-50",
+              alert: s.linksDown > 0,
             },
             {
-              label: "Ports DOWN",
-              value: s.portsDown,
-              icon: WifiOff,
+              label: "Liens partiels",
+              value: s.linksPartial,
+              icon:  WifiOff,
               color: "text-orange-500",
-              bg: "bg-orange-50",
-              alert: s.portsDown > 0,
+              bg:    "bg-orange-50",
+              alert: s.linksPartial > 0,
             },
             {
-              label: "Ports avec erreurs",
-              value: s.portsWithErrors,
-              icon: AlertTriangle,
+              label: "Liens avec erreurs",
+              value: s.linksWithErrors,
+              icon:  AlertTriangle,
               color: "text-yellow-500",
-              bg: "bg-yellow-50",
-              alert: s.portsWithErrors > 0,
+              bg:    "bg-yellow-50",
+              alert: s.linksWithErrors > 0,
             },
           ].map(({ label, value, icon: Icon, color, bg, alert }) => (
             <Card key={label} className={alert ? "border-red-200" : ""}>
@@ -443,16 +493,24 @@ export default function Report() {
         </div>
       )}
 
-      {/* Détail par device */}
-      {report && Array.isArray(report.devices) && (
+      {/* Liens groupés par paire de sites */}
+      {report && Array.isArray(report.linksBySitePair) && (
         <div className="space-y-4">
           <CardHeader className="px-0 pb-2">
             <CardTitle className="text-base font-medium">
-              Détail par équipement
+              Liens par paire de sites
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                ({report.summary.totalLinks} liens —{" "}
+                {report.period.from} → {report.period.to})
+              </span>
             </CardTitle>
           </CardHeader>
-          {report.devices.map((device) => (
-            <DeviceCard key={device.device_id} device={device} />
+
+          {report.linksBySitePair.map((group) => (
+            <SitePairCard
+              key={`${group.siteA}-${group.siteB}`}
+              group={group}
+            />
           ))}
         </div>
       )}

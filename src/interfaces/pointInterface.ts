@@ -4,11 +4,17 @@ import type { Point, CreatePointData, Section} from "@/datatypes"
 import { toast } from "sonner"
 //import { set } from "date-fns"
 
-// GET
+// GET points As-built
 export const fetchPoints = async (): Promise<Point[]> => {
-  const res = await api.get("/points")
-  return res.data
-}
+  const res = await api.get("/points");
+ // console.log("fetchPoints response:", res.data);
+
+  return Array.isArray(res.data)
+    ? res.data
+    : Array.isArray(res.data?.points)
+    ? res.data.points
+    : [];
+};
 
 export const fetchIncidentPoints = async (): Promise<Point[]> => {
   const res = await api.get("/points/pointsofcup")
@@ -27,7 +33,6 @@ export const fetchSections = async (): Promise<Section[]> => {
   return res.data
 }
 
-// ACTIONS (IMPORTANT: pas des hooks)
 export const createPoint = async (data: CreatePointData): Promise<Point> => {
   const res = await api.post("/points", data)
   return res.data
@@ -36,9 +41,6 @@ export const createPoint = async (data: CreatePointData): Promise<Point> => {
 export const deletePoint = async (id: string): Promise<void> => {
   await api.delete(`/points/${id}`)
 }
-
-// src/api/points.ts
-
 
 export const updatePoint = async (
   id: string,

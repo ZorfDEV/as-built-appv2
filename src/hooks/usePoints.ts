@@ -8,21 +8,26 @@ export function usePoints() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchPoints()
-        setPoints(data)
-      } catch {
-        setError("Erreur chargement points")
-        toast.error("Erreur chargement points")
-      } finally {
-        setLoading(false)
-      }
-    }
+   useEffect(() => {
+    fetchPoints()
+      .then((data) => {
+        setPoints(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("Erreur fetchPoints:", err);
+        setError(err.message ?? "Erreur inconnue");
+         toast.error("Erreur chargement points")
+        setPoints([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-    load()
-  }, [])
-
-  return { points, loading, error }
+  return { points, loading, error };
 }
+
+ 
+
+
+
+
+ 

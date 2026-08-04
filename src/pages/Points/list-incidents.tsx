@@ -33,10 +33,8 @@ function ListIncidents() {
         //section_id: (item as any).section_id ?? { name: 'N/A' },
       })) as unknown as Point[];
     }, [points]);
-//const columns = [ "name", "nature"] as (keyof Point)[];
 const navigate = useNavigate();
- 
- // supprimer un point
+
  const handelDelete =useCallback((id: string) => {
  console.log("ID à supprimer :", id);
  const confirm = window.confirm(`Êtes-vous sûr de vouloir supprimer le point ?`);
@@ -44,7 +42,7 @@ const navigate = useNavigate();
     api.delete(`/points/${id}`)
         .then(() => {
             toast.success("Point supprimé avec succès");
-            navigate("/dashboard/incidents");
+            window.location.reload();
         })
         .catch(error => {
             if (error?.response?.status === 403) {
@@ -55,22 +53,16 @@ const navigate = useNavigate();
             console.error("Erreur lors de la suppression :", error);
         });
         
-}, [navigate]);
+}, []);
 
-// Afficher les détails du point
 const handleView = useCallback((id: string) => {
-  //console.log("ID à afficher :", id);
   navigate(`/dashboard/point/view/${id}`);
 }, [navigate]);
 
-// Implémentez la logique pour éditer le point
 const handleEdit = useCallback((id: string) => {
-  //console.log("ID à éditer :", id);
   navigate(`/dashboard/point/edit/${id}`);
 }, [navigate]);
  
-
-// Sélection de lignes
 const toggleSelect = (id: string) => {
   setSelectedIds(prev =>
     prev.includes(id)
@@ -86,7 +78,6 @@ const selectAll = (ids: string[]) => {
 const clearSelection = () => {
   setSelectedIds([])
 }
- // Suppression de plusieurs points
   const handleDeleteSelected = async () => {
   if (selectedIds.length === 0) {
     toast.error("Aucun point sélectionné")
@@ -100,14 +91,12 @@ const clearSelection = () => {
 
    try {
     await api.delete("/points/deletemultiple", {
-      data: { ids: selectedIds }, // ← axios.delete envoie le body via `data`
+      data: { ids: selectedIds }, 
     })
 
     toast.success("Points supprimés avec succès")
-
     clearSelection()
-
-    window.location.reload() // simple & efficace
+    window.location.reload() 
 
   } catch (error) {
     toast.error("Erreur lors de la suppression multiple")

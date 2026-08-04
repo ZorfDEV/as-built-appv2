@@ -37,8 +37,8 @@ function ViewSection() {
       const load = async () => {
         try {
           const res = await fetchSectionById(id);
-          console.log("Section chargée :", res.section);
-          console.log("Point associé :", res.points);
+          //console.log("Section chargée :", res.section);
+          //console.log("Point associé :", res.points);
           setSection(res.section);
           setPoints(res.points);
           setMarqueurs(res.marqueurs);
@@ -75,7 +75,7 @@ if (error) {
     if (!confirm) return;
     //setLoading(true);
     
-    api.delete(`/api/sections/${id}`)
+    api.delete(`/sections/${id}`)
         .then(() => {
             toast.success("Section supprimée avec succès");
             navigate(-1); // Retourne à la page précédente

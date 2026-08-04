@@ -1,10 +1,12 @@
-// types/table.types.ts
-// ✅ Type générique pour une ligne de données
-export type TableRowData = Record<string, unknown> & { _id?: string; id?: string }
 
+export type TableRowData = Record<string, unknown> & { 
+  _id?: string; 
+  id?: string;
+  publicId?: string;  // ✅ ajouté
+}
 // ✅ Récupère l'id peu importe le nom du champ (_id ou id)
 export function getRowId(row: TableRowData): string {
-  return String(row._id ?? row.id ?? "")
+  return String(row.publicId ?? row._id ?? row.id ?? "")
 }
 
 // ✅ Type d'un renderer de cellule personnalisé

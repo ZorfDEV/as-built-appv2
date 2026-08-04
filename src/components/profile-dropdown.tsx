@@ -6,7 +6,6 @@ import {
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -25,33 +24,36 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from '@/components/ui/button'
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom"
 
 export function ProfileDropdown() {
 
   const { user,logout } = useAuth();
   const { isMobile } = useSidebar()
+  const navigate = useNavigate()
 
-  if (!user) {
-    return null; // Ou un composant de chargement, ou une redirection vers la page de connexion
-  }
+  if (!user) return null;
+
+  const handleView = () => {
+    navigate(`/dashboard/user/view/${user.publicId}`);
+  };
+
+  // ✅ logout est async — on le wrappe
+  const handleLogout = async () => {
+    await logout();
+  };
+
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant='ghost' className='rounded-full h-8 w-8 px-2 '>
-               <Avatar className="h-8 w-8 rounded-full">
-               {
-                    user.avatar ? 
-                   
-                    (
-                      <AvatarImage src={user.avatar || ""} alt={user.name} />
-                    ) : (
-                      <AvatarFallback className=" bg-axblue-2 text-white rounded-full dark:bg-muted">{user.name.charAt(0)}</AvatarFallback>
-                    )
-                    
-                  }
+            <Button variant='outline' className='rounded-full h-8 w-8 '>
+               <Avatar className="h-8 w-8 rounded-full justify-center items-center">
+               <AvatarFallback className=" bg-axblue-2 text-white rounded-full dark:bg-muted">
+                {user.name.charAt(0)}
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -64,16 +66,7 @@ export function ProfileDropdown() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                <Avatar className="h-8 w-8 rounded-full">
-               {
-                    user.avatar ? 
-                   
-                    (
-                      <AvatarImage src={user.avatar || ""} alt={user.name} />
-                    ) : (
                       <AvatarFallback className=" bg-axblue-2 text-white rounded-full">{user.name.charAt(0)}</AvatarFallback>
-                    )
-                    
-                  }
               </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -83,15 +76,15 @@ export function ProfileDropdown() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleView} className="cursor-pointer">
                  <UserCog />
-                Account
+                <span>Compte</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={logout} className="cursor-pointer ">
+            <DropdownMenuItem variant="destructive" onClick={handleLogout} className="cursor-pointer ">
               <LogOut />
-              Log out
+              <span>Déconnexion</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

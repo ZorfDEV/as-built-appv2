@@ -17,14 +17,28 @@ import { fetchPointById } from "@/interfaces/pointInterface"
 import { useSections } from "@/hooks/useSections"
 import { useMarqueurs } from "@/hooks/useMarqueurs"
 import { useUpdatePoint } from "@/hooks/useUpdatePoint"
+import {
+  MapPinned,
+  Tag,
+  Globe,
+  FileText,
+  Layers3,
+  CircleDot,
+  Grid2X2,
+  Star,
+  ChevronsLeftRight,
+  Info,
+  MapPinPen,
+} from "lucide-react";
+import SectionTitle  from "@/components/section-title";
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 
-// ✅ Type générique pour les options de select
 type SelectOption = {
   value: string
   label: string
 }
 
-// ✅ Alias clair pour le formulaire
 type EditPointFormValues = CreatePointData
 
 export default function EditPoint() {
@@ -38,7 +52,7 @@ export default function EditPoint() {
 
   const [error, setError] = useState<string | null>(null)
 
-  // ✅ Options typées avec SelectOption
+  // Options typées avec SelectOption
   const optionsSections: SelectOption[] = sections.map((section) => ({
     value: section._id,
     label: section.name,
@@ -77,7 +91,6 @@ export default function EditPoint() {
           description: data.description,
           nature: data.nature,
           status: data.status,
-          // ✅ Guard au cas où section_id / marqueur_id seraient null ou déjà une string
           section_id:
             typeof data.section_id === "string"
               ? data.section_id
@@ -89,7 +102,6 @@ export default function EditPoint() {
           user_id: data.user_id,
         })
       } catch (err) {
-        // ✅ Typage explicite de l'erreur
         const message = err instanceof Error ? err.message : "Erreur inconnue"
         setError(message)
       }
@@ -98,7 +110,6 @@ export default function EditPoint() {
     load()
   }, [id, reset])
 
-  // ✅ Return type explicite sur onSubmit
   const onSubmit = async (data: EditPointFormValues): Promise<void> => {
     if (!id) {
       setError("ID manquant")
@@ -107,7 +118,6 @@ export default function EditPoint() {
     await update(id, data)
   }
 
-  // ✅ Affichage de l'erreur si ID manquant ou chargement échoué
   if (error) {
     return (
       <div className="p-4">
@@ -123,18 +133,35 @@ export default function EditPoint() {
     <div className="p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Modifier le point</CardTitle>
-        </CardHeader>
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-start gap-4">
+              <div className=" flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-400/10">
+                <MapPinned className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                 <CardTitle className='text-axblue-2 dark:text-white/80'>Modifier le  point</CardTitle>
+                <p className="mt-1 text-sm md:text-base text-slate-400">
+                  Renseignez les nouvelles informations du point .
+                </p>
+              </div>
+            </div>
+          </div>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid grid-cols-3 gap-4">
-
+           <div className="relative z-10">
+          <div className="grid grid-cols-1 gap-10 xl:grid-cols-[1fr_auto_1fr]">
+              {/* LEFT SIDE */}
+            <div className="space-y-6">
+             <SectionTitle
+             icon={<MapPinPen  className="h-4 w-4"/>}
+             title="Informations générales"/>
               <FieldGroup>
                 <Field>
-                  {/* ✅ Message d'erreur affiché si le champ est requis */}
                   <FloatingInput
                     label="Nom"
                     {...register("name", { required: "Le nom est requis" })}
+                    icon={<Tag className="h-5 w-5 text-emerald-400" />} 
                   />
                   {errors.name && (
                     <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -145,6 +172,7 @@ export default function EditPoint() {
                   <FloatingInput
                     label="Longitude"
                     {...register("longitude", { valueAsNumber: true })}
+                    icon={<Globe className="h-5 w-5 text-emerald-400" />} 
                   />
                 </Field>
 
@@ -152,16 +180,31 @@ export default function EditPoint() {
                   <FloatingInput
                     label="Latitude"
                     {...register("latitude", { valueAsNumber: true })}
+                    icon={<Globe className="h-5 w-5 text-emerald-400" />} 
                   />
                 </Field>
 
                 <Field>
-                  <FloatingInput label="Description" {...register("description")} />
+                  <FloatingInput label="Description" {...register("description")} 
+                  type="textarea" required  icon={<FileText className="h-5 w-5 text-emerald-400" />}  labelclassName="peer-focus:bg-white  dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80 "
+                  />
                 </Field>
-              </FieldGroup>
+                 </FieldGroup>
+                 </div>
+                {/* Divider desktop */}
+        <div className="hidden xl:flex items-center justify-center">
+           <div className="h-full w-px bg-border shrink-0 relative">
+               <Button variant="outline" className=" absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full  flex items-center justify-center ">
+                  <ChevronsLeftRight className="h-4 w-4 " />
+                            </Button>
+                          </div>
+                        </div>
 
-              <div className="separator-v ml-30 h-auto w-0 border border-gray-200 dark:border-darkborder" />
-
+            {/* RIGHT SIDE */}
+              <div className="space-y-6">
+                <SectionTitle
+                icon={<Layers3 className="h-4 w-4" />}
+                title="Classification"/>
               <FieldGroup>
                 <Field>
                   <FloatingSelect
@@ -169,11 +212,16 @@ export default function EditPoint() {
                     onValueChange={(v: string) => setValue("nature", v)}
                     options={[
                       { value: "pt-asbuilt", label: "As Built" },
+                       { value: "borne-réperage", label: "Borne de Réperage" },
+                        { value: "ct", label: "Centre Technique" },
                       { value: "incident", label: "Incident" },
                       { value: "chambre", label: "Chambre" },
-                    ] satisfies SelectOption[]} // ✅ satisfies vérifie le type sans le widener
+                      { value: "gare", label: "Gare" },
+                      { value: "signalisation", label: "Signalisation" },
+                    ] satisfies SelectOption[]} 
                     name={"Nature"} 
-                    id={"Nature"}                  />
+                    id={"Nature"}
+                    icon={<Tag className="h-5 w-5 text-emerald-400" />}/>
                 </Field>
 
                 <Field>
@@ -186,6 +234,8 @@ export default function EditPoint() {
                       { value: "active", label: "Actif" },
                       { value: "inactive", label: "Inactif" },
                     ] satisfies SelectOption[]}
+                    icon={<CircleDot className="h-4 w-4 text-emerald-400" />}
+
                   />
                 </Field>
 
@@ -196,6 +246,7 @@ export default function EditPoint() {
                     label="Section"
                     onValueChange={(v: string) => setValue("section_id", v)}
                     options={optionsSections}
+                    icon={<Grid2X2 className="h-4 w-4 text-emerald-400" />} 
                   />
                 </Field>
 
@@ -205,28 +256,34 @@ export default function EditPoint() {
                     id={"marqueur_id"}
                     label="Marqueur"
                     onValueChange={(v: string) => setValue("marqueur_id", v)}
+                    icon={<Star className="h-5 w-5 text-emerald-400" />}
                     options={optionsMarqueurs}
                   />
                 </Field>
               </FieldGroup>
-
-              <Field>
-                <Button
-                  type="button" // explicitement "button" pour éviter un submit accidentel
-                  variant="ghost"
-                  onClick={() => navigate(-1)}
-                >
+              <div className=" flex flex-col-1 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2 ">
+               <Badge className="rounded-full bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300">
+                <Info className='h-4 w-4' />
+               </Badge>
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  Attention de bien vérifier les coordonées lat et lon du point.
+                </p>
+              </div>
+           </div>
+           </div>
+             {/* Footer actions */}
+            <Separator className="my-8" />
+           <div className="flex flex-col-reverse gap-4 sm:flex-row sm:justify-between">
+               <Field className='w-40 sm:w-auto'>
+                <Button variant="outline" onClick={() => navigate(-1)} className='w-auto' >
                   Annuler
                 </Button>
               </Field>
-
-              <div />
-
-              <Field>
+              <Field className='w-40 sm:w-auto'>
                 {/* Désactivé pendant la soumission */}
                 <ButtonMain actioname="main" type="submit" disabled={isSubmitting} label={isSubmitting ? "Enregistrement..." : "Enregistrer"} / > 
               </Field>
-
+             </div>
             </div>
           </form>
         </CardContent>

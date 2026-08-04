@@ -8,10 +8,10 @@ import {
   Users,
   Layers,
   Activity,
+  Router,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-//import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { sidebarData } from "@/datatypes/sidebar-data"
 import {
@@ -22,65 +22,78 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { LogoMenu } from "./logo-menu"
+import { useAuth } from "@/contexts/AuthContext"  
 
-const data = {
- 
-  navMain: [
-    {
-      title: "Carte",
-      url: "/dashboard/map",
-      icon: Map,
-      isActive: true,
-    },
-    {
-      title: "Points-as-built",
-      url: "/dashboard/points",
-      icon: Network,
-    },
-    {
-      title: "Incidents",
-      url: "/dashboard/incidents",
-      icon: TriangleAlert,
-    },
-    {
-      title: "Sections",
-      url: "/dashboard/sections",
-      icon: Layers,
-
-    },
-    {
-      title: "Utilisateurs",
-      url: "/dashboard/users",
-      icon: Users,
-    },
-    {
-      title: "Statut liens",
-      url: "/dashboard/reports",
-      icon: Activity,
-    },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings2,
-    },
-  ],
- 
-}
+const allNavItems = [
+  {
+    title: "Carte",
+    url: "/dashboard/map",
+    icon: Map,
+    isActive: true,
+    adminOnly: false,  
+  },
+  {
+    title: "Points-as-built",
+    url: "/dashboard/points",
+    icon: Network,
+    adminOnly: false,
+  },
+  {
+    title: "Incidents",
+    url: "/dashboard/incidents",
+    icon: TriangleAlert,
+    adminOnly: false,
+  },
+  {
+    title: "Sections",
+    url: "/dashboard/sections",
+    icon: Layers,
+    adminOnly: false,
+  },
+  {
+    title: "Utilisateurs",
+    url: "/dashboard/users",
+    icon: Users,
+    adminOnly: true,  
+  },
+  {
+    title: "Statut liens",
+    url: "/dashboard/reports",
+    icon: Activity,
+    adminOnly: false,
+  },
+  {
+    title: "Equipements",
+    url: "/dashboard/devices",
+    icon: Router,
+    adminOnly: false,
+  },
+  {
+    title: "Settings",
+    url: "/dashboard/settings",
+    icon: Settings2,
+    adminOnly: true,
+  },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth()  // ✅ récupère l'utilisateur connecté
 
-  
+  // ✅ Filtre les items selon le rôle
+  const navItems = allNavItems.filter(item => 
+    !item.adminOnly || user?.role === 'admin'
+  )
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-       <LogoMenu teams={sidebarData.teams} />
+        <LogoMenu teams={sidebarData.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} title={""} />
+        <NavMain items={navItems} title={""} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser  />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

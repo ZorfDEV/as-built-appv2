@@ -8,27 +8,31 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { POINT_COLUMNS } from "@/components/table/column-presets"
 import { sleep } from '@/lib/utils'
+
 function ListPoints() {
 
 const [selectedIds, setSelectedIds] = useState<string[]>([])
 const fileNamesExcel = "Points_As-built";
- const { points, loading, error } = usePoints();
-   const datas: Point[] = useMemo(() => {
-      return points.map((item) => ({
-        ...item,
-        createdAt: new Date(item.createdAt),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        updatedAt: (item as any).updatedAt ? new Date((item as any).updatedAt) : new Date(item.createdAt),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        nature: (item as any).nature ?? '',
-      })) as unknown as Point[];
-    }, [points]);
+const { points, loading, error } = usePoints();
 
-// const columns = [ "name", "longitude", "latitude", "nature"] as (keyof Point)[];
+const datas: Point[] = useMemo(() => {
+  if (!Array.isArray(points)) return [];
+
+  return points.map((item) => ({
+    ...item,
+    createdAt: new Date(item.createdAt),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updatedAt: (item as any).updatedAt
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? new Date((item as any).updatedAt)
+      : new Date(item.createdAt),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    nature: (item as any).nature ?? "",
+  })) as unknown as Point[];
+}, [points]);
+
 const navigate = useNavigate();
 
- 
- // supprimer un point
  const handelDelete =useCallback((id: string) => {
  console.log("ID à supprimer :", id);
  const confirm = window.confirm(`Êtes-vous sûr de vouloir supprimer le point ?`);
@@ -36,7 +40,6 @@ const navigate = useNavigate();
     api.delete(`/points/${id}`)
         .then(() => {
             toast.success("Point supprimé avec succès");
-            //navigate("/dashboard/points");
             window.location.reload()
         })
         .catch(error => {
@@ -50,27 +53,21 @@ const navigate = useNavigate();
         
 }, []);
 
-// Afficher les détails du point
 const handleView = useCallback((id: string) => {
-  //console.log("ID à afficher :", id);
   navigate(`/dashboard/point/view/${id}`);
 }, [navigate]);
 
-// Implémentez la logique pour éditer le point
 const handleEdit = useCallback((id: string) => {
-  //console.log("ID à éditer :", id);
   navigate(`/dashboard/point/edit/${id}`);
 }, [navigate]);
- 
 
-// Sélection de lignes
 const toggleSelect = (id: string) => {
   setSelectedIds(prev =>
     prev.includes(id)
       ? prev.filter(i => i !== id)
       : [...prev, id]
   )
-  console.log("ID sélectionné :", id);
+  //console.log("ID sélectionné :", id);
   
 }
 
@@ -81,24 +78,16 @@ const selectAll = (ids: string[]) => {
 const clearSelection = () => {
   setSelectedIds([])
 }
- // Suppression de plusieurs points
   const handleDeleteSelected = async () => {
   if (selectedIds.length === 0) {
     toast.error("Aucun point sélectionné")
     return
   }
-
-/*  const confirm = window.confirm(
-    `Supprimer ${selectedIds.length} points ?`
-  )
-  if (!confirm) return
-*/
   try {
     await api.delete("/points/deletemultiple", {
-      data: { ids: selectedIds }, // ← axios.delete envoie le body via `data`
+      data: { ids: selectedIds }, 
     })
     
-    //toast.success("Points supprimés avec succès")
      toast.promise(sleep(2000), {
       loading: 'Deleting tasks...',
       success: () => {
@@ -108,11 +97,8 @@ const clearSelection = () => {
       },
       error: 'Error',
     })
-
     clearSelection()
-
-    window.location.reload() // simple & efficace
-
+    window.location.reload() 
   } catch (error) {
     toast.error("Erreur lors de la suppression multiple")
     console.log(error)

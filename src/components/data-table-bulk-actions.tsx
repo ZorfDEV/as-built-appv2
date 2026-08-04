@@ -52,11 +52,11 @@ export function DataTableBulkActions<TData>({
               title='Export tasks'
             >
               <Download />
-              <span className='sr-only'>Export tasks</span>
+              <span className='sr-only'>Export fichiers</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Export tasks</p>
+            <p>Export fichiers</p>
           </TooltipContent>
         </Tooltip>
 
@@ -76,7 +76,7 @@ export function DataTableBulkActions<TData>({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Delete selected tasks</p>
+            <p>Supprimer les élements sélectionnés</p>
           </TooltipContent>
         </Tooltip>
       </BulkActionsToolbar>

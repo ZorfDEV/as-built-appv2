@@ -55,7 +55,6 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   )
 }
 
-// Fonction utilitaire à placer hors du composant
 function getTopSectionForMonth(
   chartData: Record<string, unknown>[],
   month: string,
@@ -63,7 +62,6 @@ function getTopSectionForMonth(
 ): string | null {
   const monthData = chartData.find((d) => d.month === month)
   if (!monthData) return null
-  // Cherche la dernière section (dans l'ordre d'empilement) qui a une valeur
   for (let i = sections.length - 1; i >= 0; i--) {
     if ((monthData[sections[i]] as number) > 0) return sections[i]
   }
@@ -104,8 +102,10 @@ export function AnalyticsChartBar({ dataincidents }: { dataincidents: Point[] })
       <CardHeader className="pb-3 ">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="flex items-start gap-1.5">
-            <ChartNoAxesColumn className="text-shadow-emerald-800 h-8 w-8"/>
+            <div className="flex items-start gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 dark:bg-teal-900/40">
+            <ChartNoAxesColumn className=" text-teal-600 h-5 w-5"/>
+            </div>
             <div>
             <CardTitle className="text-base font-medium">Diagramme des incidents</CardTitle>
              <CardDescription className="text-xs mt-0.5">Janvier – Décembre 2026</CardDescription>
@@ -123,7 +123,7 @@ export function AnalyticsChartBar({ dataincidents }: { dataincidents: Point[] })
       </CardHeader>
 
       <CardContent className=" px-3">
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={420}>
           <BarChart data={chartData} barCategoryGap="35%" barGap={2}>
             <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
             <XAxis

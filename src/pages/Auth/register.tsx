@@ -4,16 +4,20 @@ import type {CreateUserData} from "@/datatypes"
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { FloatingInput } from "@/components/floating-input"
-//import { Button } from "@/components/ui/button"
 import  ButtonMain  from "@/components/button-main"
 import { FloatingSelect } from "@/components/floating-select";
 import {
   Field,
-   FieldGroup,
+  FieldGroup,
 } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+import { User, Mail, KeyRound, UserKey, Shield } from "lucide-react"; 
+import { Button } from "@/components/ui/button";
 
 type optionsRoles = {
+  value: string;
+  label: string;
+}
+type optionsStatus = {
   value: string;
   label: string;
 }
@@ -24,12 +28,19 @@ function Register({ onSuccess }: { onSuccess: () => void }) {
     email: "",
     password: "",
     avatar: "",
-    role: ""
+    role: "",
+    status: "inactive", 
   });
 
   const optionsRoles: optionsRoles[] = [
     { value: "admin", label: "Administrateur" },
     { value: "user", label: "Utilisateur" }
+  ];
+
+   const optionsStatus: optionsStatus[] = [
+    { value: "actived", label: "Actif" },
+    { value: "inactive", label: "Inactif" },
+    { value: "pending", label: "pending" }
   ];
 
   const navigate = useNavigate();
@@ -42,26 +53,32 @@ function Register({ onSuccess }: { onSuccess: () => void }) {
     }));
   };
 
-  const handleSelectChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      role: value
-    }));
-  };
+  const handleSelectChange = (field: string) => (value: string) => {
+  setFormData(prev => ({ ...prev, [field]: value }));
+};
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  if (!formData.name || !formData.email || !formData.password || !formData.role) {
+    toast.error("Veuillez remplir tous les champs obligatoires");
+    return;
+  }
+  try {
+    await api.post("/auth/register", {
+      name:     formData.name,
+      email:    formData.email,
+      password: formData.password,
+      role:     formData.role,
+      status:   formData.status,
+    });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      await api.post("/auth/register", formData);
-      toast.success("Inscription réussie");
-      onSuccess();
-      navigate("/dashboard/users");
-    } catch (error) {
-      toast.error("Erreur lors de l'inscription");
-      console.error("New users :",formData);
-      console.error("Error during registration :", error);
-    }
-  };
+    toast.success("Inscription réussie");
+    onSuccess();
+    window.location.reload();
+  } catch (error) {
+    toast.error("Erreur lors de l'inscription");
+    console.error("Error during registration:", error);
+  }
+};
 
   return (
     <div>
@@ -73,6 +90,8 @@ function Register({ onSuccess }: { onSuccess: () => void }) {
               name="name"
               value={formData.name}
               onChange={handleChange}
+              labelclassName="peer-focus:bg-white dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80"
+              icon={<User className="h-4 w-4 text-emerald-400" />} 
             />
           </Field>
           <Field>
@@ -82,6 +101,8 @@ function Register({ onSuccess }: { onSuccess: () => void }) {
               type="email"
               value={formData.email}
               onChange={handleChange}
+              labelclassName="peer-focus:bg-white dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80"
+              icon={<Mail className="h-4 w-4 text-emerald-400" />} 
             />
           </Field>
           <Field>
@@ -91,23 +112,46 @@ function Register({ onSuccess }: { onSuccess: () => void }) {
               type="password"
               value={formData.password}
               onChange={handleChange}
+              labelclassName="peer-focus:bg-white dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80"
+              icon={<KeyRound className="h-4 w-4 text-emerald-400" />} 
             />
           </Field>
         </FieldGroup>
-          <FieldGroup>
-        <Field>
-            <Input id="picture" type="file" value="/upload/avatars/avatar.png" name="avatar" accept=".png,.svg"
-              onChange={handleChange}  />
-          </Field>
-           <Field>
-          <FloatingSelect label="Rôle" id="role" name="role" required options={optionsRoles} onValueChange={handleSelectChange} />
-          </Field>
-          </FieldGroup>
-          <div className="flex justify-end">
-          <ButtonMain actioname="main" label="S'inscrire" type="submit" />
-          </div>
-      </form>
 
+        <FieldGroup>
+          <Field>
+            <FloatingSelect 
+              label="Rôle" 
+              id="role" 
+              name="role" 
+              required 
+              options={optionsRoles} 
+              onValueChange={handleSelectChange('role')}  
+              icon={<UserKey className="h-4 w-4 text-emerald-400" />}  
+            />
+          </Field>
+
+          <Field>
+            <FloatingSelect 
+              label="Statut" 
+              id="status" 
+              name="status" 
+              required 
+              options={optionsStatus} 
+              onValueChange={handleSelectChange('status')}  
+              icon={<Shield className="h-4 w-4 text-emerald-400" />}  
+            />
+          </Field>
+        </FieldGroup>
+         <div className="grid grid-cols-2 gap-2">
+          <Field>
+          <Button variant="outline" onClick={() => navigate(-1)} className='w-auto' >
+            Annuler
+            </Button>
+             </Field>
+          <ButtonMain actioname="main" label="S'inscrire" type="submit" />
+        </div>
+      </form>
     </div>
   )
 }

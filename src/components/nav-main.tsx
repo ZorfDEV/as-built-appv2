@@ -38,12 +38,12 @@ import type {
   NavGroup as NavGroupProps,
 } from "@/components/layouts/types"
 
-///////////////////////////////////////////////////////////////
-
 export function NavMain({ title, items }: NavGroupProps) {
+  
   const { state, isMobile } = useSidebar()
   const location = useLocation()
   const href = location.pathname
+  
 
   return (
     <SidebarGroup>

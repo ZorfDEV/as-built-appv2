@@ -86,7 +86,7 @@ export function TableBase<T extends TableRowData>({
       header: col.header,
       cell: ({ row }: { row: Row<T> }) => {
         const value = row.getValue(col.key)
-        // ✅ Utilise le renderer custom ou affiche le texte brut
+       
         return col.render
           ? <>{col.render(value, row.original)}</>
           : <span>{value != null ? String(value) : "—"}</span>

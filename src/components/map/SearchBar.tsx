@@ -96,7 +96,7 @@ export default function SearchBar({ points }: { points: Point[] }) {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Nom du point ou coordonnées (lat,lng)"
+          placeholder="Nom du point"
 
         />
         <Button type="submit" variant="outline">

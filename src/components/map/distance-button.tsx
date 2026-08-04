@@ -35,7 +35,7 @@ function BtnMap({ handleSubmit, handleRoute }: { handleSubmit: (lat: string | nu
       <AlertDialogTrigger asChild>
     <Button variant='destructive'> 
     <Scissors className="mr-2 h-4 w-4" />
-    Ajouter PI
+    Ajouter un point d'incident
     </Button>
     </AlertDialogTrigger>
       <AlertDialogContent>
@@ -48,7 +48,7 @@ function BtnMap({ handleSubmit, handleRoute }: { handleSubmit: (lat: string | nu
           </AlertDialogMedia>
           <AlertDialogTitle>Ajouter un point d'incident</AlertDialogTitle>
           <AlertDialogDescription>
-            Saisissez les coordonnées du point d'incident à ajouter.
+            Saisissez les coordonnées du point d'incident à ajouter .
           </AlertDialogDescription>
         </AlertDialogHeader>
         <form className="p-4 items-center justify-center">

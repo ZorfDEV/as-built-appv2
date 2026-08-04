@@ -4,9 +4,13 @@ import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 type Theme = 'dark' | 'light' | 'system'
 type ResolvedTheme = Exclude<Theme, 'system'>
 
-const DEFAULT_THEME = 'system'
+const DEFAULT_THEME = 'light'
 const THEME_COOKIE_NAME = 'vite-ui-theme'
 const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+
+// ✅ Incrémente cette version pour forcer une réinitialisation future
+const THEME_VERSION = 'v2'
+const THEME_VERSION_COOKIE = 'vite-ui-theme-version'
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -38,9 +42,18 @@ export function ThemeProvider({
   storageKey = THEME_COOKIE_NAME,
   ...props
 }: ThemeProviderProps) {
-  const [theme, _setTheme] = useState<Theme>(
-    () => (getCookie(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, _setTheme] = useState<Theme>(() => {
+    const savedVersion = getCookie(THEME_VERSION_COOKIE)
+
+    // ✅ Si la version ne correspond pas (ou n'existe pas), on force le thème par défaut
+    if (savedVersion !== THEME_VERSION) {
+      setCookie(THEME_VERSION_COOKIE, THEME_VERSION, THEME_COOKIE_MAX_AGE)
+      setCookie(storageKey, DEFAULT_THEME, THEME_COOKIE_MAX_AGE)
+      return DEFAULT_THEME
+    }
+
+    return (getCookie(storageKey) as Theme) || defaultTheme
+  })
 
   // Optimized: Memoize the resolved theme calculation to prevent unnecessary re-computations
   const resolvedTheme = useMemo((): ResolvedTheme => {

@@ -11,11 +11,10 @@ export const fetchSectionById = async (id: string ): Promise<{ section: Section;
   if (!id) throw new Error("ID requis")
 
   const res = await api.get(`/sections/${id}`)
-  console.log("Données de la section :", res.data);
+ // console.log("Données de la section :", res.data);
   return res.data
 }
 
-// ACTIONS (IMPORTANT: pas des hooks)
 export const createSection = async (data: CreatedSectionData): Promise<Section> => {
   const res = await api.post("/sections", data)
   return res.data

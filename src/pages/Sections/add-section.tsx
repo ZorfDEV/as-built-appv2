@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Textarea } from "@/components/ui/textarea"
 import { useNavigate} from "react-router-dom"
 import { toast } from "sonner"
+import { Grid2X2 } from "lucide-react"
 
 function AddSection({ onSuccess }: { onSuccess: () => void }) {
   const navigate = useNavigate()
@@ -45,7 +46,8 @@ function AddSection({ onSuccess }: { onSuccess: () => void }) {
             <FloatingInput
              label="Nom de la section"
               {...register("name", { required: "Le nom est requis" })}
-              
+              labelclassName="peer-focus:bg-white  dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80 "
+              icon={<Grid2X2 className="h-4 w-4 text-emerald-400" />}
             />
           </Field>
         </FieldGroup>

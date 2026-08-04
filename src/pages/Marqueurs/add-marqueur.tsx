@@ -15,11 +15,12 @@ import { useNavigate} from "react-router-dom"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useState } from "react"
+import { Flag } from "lucide-react"
 
 type FormValues = {
   name: string
   description: string
-  file: FileList // ✅ FileList pour input type="file"
+  file: FileList
 }
 
 function AddMarqueur({ onSuccess }: { onSuccess: () => void }) {
@@ -33,7 +34,7 @@ const navigate = useNavigate()
     await createMarqueur({
       name: data.name,
       description: data.description,
-      file: data.file[0],  // ✅ FileList → File
+      file: data.file[0],  
     })
    onSuccess()
    toast.success("Marqueur créé avec succès")
@@ -53,6 +54,8 @@ const navigate = useNavigate()
             <FloatingInput
               label="Nom"
               {...register("name", { required: "Le nom est requis" })}
+              labelclassName="peer-focus:bg-white  dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80 "
+              icon={<Flag  className="h-4 w-4 text-emerald-400" />}
             />
           </Field>
           <Field>

@@ -11,12 +11,6 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
- /* test: {
-    globals: true,           // permet d'utiliser describe/it/expect sans import
-    environment: 'jsdom',    // simule le DOM du navigateur
-    setupFiles: './src/test/setup.ts',
-    css: true,               // si tes composants importent du CSS
-  },*/
   server: {
      host: '0.0.0.0',  
     port: 5173, // Port de l'application

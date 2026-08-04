@@ -1,5 +1,5 @@
 import { useRef,useEffect, useState } from 'react';
-import { MapContainer, Marker, Popup,Tooltip, Polyline,TileLayer } from 'react-leaflet';
+import { MapContainer, Marker, Popup,Tooltip, Polyline,TileLayer,LayersControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import L, { LatLngBounds, type LatLngTuple } from 'leaflet';
 import { Map } from 'leaflet';
@@ -10,14 +10,16 @@ import SearchBar from './SearchBar';
 import PanelPoints from './PanelPoints';
 import CustomZoomControl from './CustomZoomControl';
 import 'leaflet/dist/leaflet.css';
-import { haversineDistance,convertDMSToDecimal,generatePointName,findSectionId,findClosestPoints } from '../../lib/distance';
+import { haversineDistance , convertDMSToDecimal , generatePointName ,findSectionId , findClosestPoints } from '../../lib/distance';
+import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Point } from '@/datatypes/index';
 import { Spinner } from "@/components/ui/spinner"
 import BtnMap from './BtnMap';
 import { GeoJSON } from 'react-leaflet';
-import { Eye,Share2 } from 'lucide-react';
+import { Eye} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SharePoint from './share-point';
 
 function getColorFromString(str: string): string {
   let hash = 0
@@ -29,12 +31,12 @@ function getColorFromString(str: string): string {
 }
 
 
-export default function MapView({ header }: { header: Record<string, string> }) {
+export default function MapView() {
 
-  //const { darkMode} = useOutletContext();
  const navigate = useNavigate();
  const { user } = useAuth();
 const [points, setPoints] = useState<Point[]>([]);
+const [pointDis, setPointDis] = useState<Point[]>([]);
 const [center, setCenter] = useState<LatLngTuple>([-0.602957760686725, 11.912091195294634]); 
 const [gabonBorders, setGabonBorders] = useState(null);
 
@@ -48,19 +50,16 @@ const [gabonBorders, setGabonBorders] = useState(null);
 const [piName, setPiName] = useState<string | null>(null);
 const [boundsFitted, setBoundsFitted] = useState(false);
 const [bounds, setBounds] = useState<LatLngBounds | null>(null);
-const [lastTenpoints, setLastTenpoints] = useState([]);
-   // chargement des frontières du Gabon
+const [lastTenpoints, setLastTenpoints] = useState<Point[]>([]);
+   
     useEffect(() => {
     const loadBorders = async () => {
       try {
         const res = await axios.get('/datas/ga.geojson');
         setGabonBorders(res.data);
-         // Création des limites à partir du GeoJSON
           const layer = L.geoJSON(res.data);
           const geoBounds = layer.getBounds();
           setBounds(geoBounds as LatLngBounds);
-
-        // Appliquer fitBounds une fois la carte prête
         if (mapRef.current) {
           mapRef.current.fitBounds(geoBounds);
           mapRef.current.setMaxBounds(geoBounds);
@@ -72,36 +71,28 @@ const [lastTenpoints, setLastTenpoints] = useState([]);
   loadBorders();
 }, []);
 
-// Récupération de tous les points
- useEffect(() => {
-  if (!header) {
-    setLoading(false)
-    return
-  }
-  const fetchPoints = async () => {
+useEffect(() => {
+  const fetchAllPoints = async () => {
     try {
-      const res = await axios.get('/api/points/map', { headers: header })
-      setPoints(res.data || [])
-      console.log('Points chargés:', res.data)
+      const res = await api.get('/points/total')
+     const allPoints = res.data || [];
+      setPointDis(allPoints);                                             
+      setPoints(allPoints.filter((p: { nature: string; }) => p.nature !== "incident")); 
+      // console.log('points chargés:', allPoints.length);
     } catch (err) {
       console.error('Erreur API carte:', err)
-      setPoints([]) // très important
+      setPointDis([]) 
     } finally {
       setLoading(false)
     }
   }
 
-  fetchPoints()
+  fetchAllPoints()
 
-  const interval = setInterval(fetchPoints, 20000)
+  const interval = setInterval(fetchAllPoints, 20000)
 
   return () => clearInterval(interval)
-}, [header])
-
-  /* Mise à jour du calque actif en fonction du mode sombre
- useEffect(() => {
-    setActiveLayer(darkMode ? "satellite" : "standard");
-  }, [darkMode]);*/
+}, [])
 
  const grouped = points.reduce((acc, point) => {
   const sectionName = point.section_id?.name || 'Unknown'
@@ -112,38 +103,32 @@ const [lastTenpoints, setLastTenpoints] = useState([]);
   return acc
 }, {} as Record<string, Point[]>)
 
-
-  
-//creation point incident
  const handleSubmit = async (lat: string | null, lon: string | null) => {
   if (!user) {
     toast.error("Utilisateur non authentifié");
     return;
   }
-  
   const map = mapRef.current;
-  console.log('mapRef:', mapRef.current);
-  console.log('mapReady:', mapReady);
-  /*const formData = new FormData(e.target as HTMLFormElement);
-  const latDMS = formData.get('latitude')?.toString().trim() || '';
-  const lonDMS = formData.get('longitude')?.toString().trim() || '';*/
+  console.warn('mapReady:', mapReady);
      
   const latDMS = lat ? lat.trim() : '';
   const lonDMS = lon ? lon.trim() : '';
 
   const latitudeconv = convertDMSToDecimal(latDMS);
   const longitudeconv = convertDMSToDecimal(lonDMS);
-  console.log('Valeurs saisies:', { lat: latitudeconv, lng: longitudeconv });
   if (latitudeconv === null || longitudeconv === null || isNaN(latitudeconv) || isNaN(longitudeconv) || latitudeconv < -90 || latitudeconv > 90 || longitudeconv < -180 || longitudeconv > 180) {
     toast.error("Coordonnées invalides");
     return;
   }
-   const  uniqueId  = await  generatePointName(latitudeconv, longitudeconv, header);
+  // console.log(`Coordonnées converties: Latitude: ${latitudeconv}, Longitude: ${longitudeconv}`);
+   const  uniqueId  = await  generatePointName(latitudeconv, longitudeconv,);
   const pointName = `PI-${uniqueId}`;
-  const closestPoints = await findClosestPoints(latitudeconv, longitudeconv, header, 10);
+  // pass empty secteurIncident as an empty string
+  const closestPoints = await findClosestPoints(latitudeconv, longitudeconv, points, 10);
+  
   setLastTenpoints(closestPoints);
-  console.log('10 points les plus proches et leur distance:', closestPoints);
-  const sectionId = await findSectionId(latitudeconv, longitudeconv, header);
+
+  const sectionId = await findSectionId(latitudeconv, longitudeconv);
   if (!sectionId) {
     toast.error("Veuillez sélectionner une section");
     return;
@@ -153,50 +138,43 @@ const [lastTenpoints, setLastTenpoints] = useState([]);
       description: `${pointName} ajouté le ${new Date().toLocaleDateString()}`,
       latitude: latitudeconv,
       longitude: longitudeconv,
-      section_id:sectionId, //formData.get('section_id'),
+      section_id:sectionId, 
       marqueur_id: '68331bd8c567b12828fc1066',
       user_id: user.id
     };
 
     try {
-      await axios.post('/api/points/pointsincident', pointData, { headers: header });
-      console.log('Point ajouté avec succès', pointData);
+      await api.post('/points/pointsincident', pointData);
       toast.success('Point ajouté avec succès');
       setPiName(pointData.name);
     } catch (error) {
-      console.error('Erreur lors de l\'ajout du point', error);
-      console.log('Erreur datas send', pointData);
-
-      toast.error("Erreur lors de l'ajout du point");
+       toast.error('Erreur lors de l\'ajout du point');
+      console.error(error);
+     
     }
-
-// centrage + ajout du marker
 if (map) {
   map.setView([latitudeconv, longitudeconv], 15);
 }
 setAddedPoint({ lat: latitudeconv, lng: longitudeconv });
 setCenter([latitudeconv, longitudeconv]);
-//console.log('Nouveau point ajouté:', { lat: latitudeconv, lng: longitudeconv });
+
 };
+
   const redIcon = new L.Icon({
     iconUrl: '/api/uploads/ic-markers/file-1748179928428-572680519.svg',
     iconSize: [32, 32],
     iconAnchor: [16, 32],
   });
- //  votre clé API ORS
- // const ORS_API_KEY = '5b3ce3597851110001cf6248d10b88622627a47934615c52671cfb8959a9befa537aa376f8adc900'; 
+
  const getCoordinates = (name: string) => {
-    const point = points.find(p => p.name === name);
+    const point = pointDis.find(p => p.name === name);
     return point ? [point.longitude, point.latitude] : null;
   };
   //Trace route
   const handleRoute = async (pointAName: string , pointBName: string) => {
-    //const nameA = pointAName;
-    //const nameB = pointBName;
     const coordsA = getCoordinates(pointAName);
     const coordsB = getCoordinates(pointBName);
-    console.log('Coordonnées A:', coordsA);
-    console.log('Coordonnées B:', coordsB);
+    
 
   if (!coordsA || !coordsB) {
       toast.error('Veuillez saisir des noms de points valides.');
@@ -206,8 +184,6 @@ setRouteCoords([
   [coordsA[1], coordsA[0]],
   [coordsB[1], coordsB[0]]
 ]);
-
-// calcul distance haversine
 const [lonA, latA] = coordsA;
 const [lonB, latB] = coordsB;
 setDistance(Number(haversineDistance(latA, lonA, latB, lonB)));
@@ -215,8 +191,47 @@ setDistance(Number(haversineDistance(latA, lonA, latB, lonB)));
     setDuration(null); 
   };
 
+// ✅ Génère un DivIcon avec icône + label
+const createMarkerIcon = (iconUrl: string, label: string) => {
+  const html = `
+    <div style="
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            4px;
+    ">
+      <img
+        src="${iconUrl}"
+        style="
+          width:       60px;   
+          height:      60px;   
+          object-fit:  contain;
+        "
+      />
+      <span style="
+        font-size:   11px;
+        font-weight: 600;
+        color:       #ffffff;
+        text-shadow: -1px -1px 0 #000,
+                      1px -1px 0 #000,
+                     -1px  1px 0 #000,
+                      1px  1px 0 #000;
+        white-space: nowrap;
+        line-height: 1;
+      ">${label}</span>
+    </div>
+  `;
+
+  return L.divIcon({
+    html,
+    className:  "",
+    iconSize:   [60, 60],    // ✅ zone de clic
+    iconAnchor: [15, 30],    // ✅ bas-centre de l'image
+  });
+};
+ 
   return (
-  <div className="h-full w-full">
+  <div className="h-full w-full "  onWheel={(e) => e.stopPropagation()}>
        
   {loading && (
     <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-50">
@@ -235,16 +250,21 @@ setDistance(Number(haversineDistance(latA, lonA, latB, lonB)));
   ref={mapRef}
   whenReady={() => {
     setMapReady(true);
+    
   }}
 >
-      <SearchBar points={points} />
+      <SearchBar points={pointDis} />
       {lastTenpoints.length > 0 && <PanelPoints listpoints={lastTenpoints} />}
       <BtnMap  handleSubmit ={handleSubmit} handleRoute={handleRoute} />
        <CustomZoomControl />
-      <TileLayer
-  attribution='&copy; OpenStreetMap contributors'
-  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-/>
+       <LayersControl position="topright">
+         <LayersControl.BaseLayer checked name="Plan standard">
+           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+         </LayersControl.BaseLayer>
+         <LayersControl.BaseLayer  name="Satellite">
+           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+         </LayersControl.BaseLayer>
+       </LayersControl>
   <MarkerClusterGroup
   chunkedLoading
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -268,45 +288,32 @@ setDistance(Number(haversineDistance(latA, lonA, latB, lonB)));
           <span>${count}</span>
         </div>`,
       className: '',
-      iconSize: [0, 0], // pour éviter les conflits avec leaflet
+      iconSize: [0, 0], 
     });
   }}
 >
         {points.map((point ,index) => (
             
-          <Marker
-            key={index}
-            position={[point.latitude, point.longitude]}
-            
-            icon={new L.Icon({
-              iconUrl: point.marqueur_id?.file ? `/api${point.marqueur_id.file}` : '/default.png',
-              iconSize: [30, 30],
-              iconAnchor: [15, 30],
-            })}
-          >
-            <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent>
-              <span className="text-xs font-semibold">{point.name}</span> 
-            </Tooltip>
+   <Marker
+  key={index}
+  position={[point.latitude, point.longitude]}
+  icon={createMarkerIcon(
+    point.marqueur_id?.file
+      ? `/api${point.marqueur_id.file}`
+      : '/default.png',
+    point.name)}
+    interactive={true}
+    >
             <Popup>
               <span className="text-xs text-gray-500">{point.description}</span><br />
               <div className='flex items-center  space-x-4'>
-                <div className='flex-1'>
-                  <Button className="mt-2 bg-[#00AED1] text-white text-xs px-2 py-1 cursor-pointer rounded hover:bg-blue-700 " onClick={() => { navigate(`/dashboard/point/view/${point._id}`); }}>
-                    <Eye />
-                  </Button>
-                </div>
-                <div className="flex-1">
-              <Button
-        onClick={() => {
-      const shareLink = `https://maps.google.com?q=${point.latitude},${point.longitude}`;
-      navigator.clipboard.writeText(shareLink);
-      toast.success("Lien copié dans le presse-papier !");
-    }}
-    className="mt-2 bg-brandgreen text-white text-xs px-2 py-1 cursor-pointer rounded hover:bg-blue-700"
-  >
-    <Share2 />
-  </Button>
-  </div>
+                <div className='flex-1  justify-between  p-2'>
+                  <Button className=" mr-2 bg-[#00AED1] text-white text-xs cursor-pointer rounded-xl hover:bg-blue-700 " onClick={() => { navigate(`/dashboard/point/view/${point.publicId}`); }}>
+                    <Eye className="h-4 w-4" />
+                   </Button>
+                   <SharePoint latitude={point.latitude} longitude={point.longitude} />
+ 
+                  </div>
               </div>
             </Popup>
           </Marker>
@@ -332,18 +339,19 @@ setDistance(Number(haversineDistance(latA, lonA, latB, lonB)));
       </MarkerClusterGroup>
        
       {addedPoint && (
+        
           <Marker position={[addedPoint.lat, addedPoint.lng]} icon={redIcon}>
             <Tooltip permanent>
               <span>{piName}</span>
             </Tooltip>
             <Popup>
-              <strong>{piName}</strong><br />
+             <SharePoint latitude={addedPoint.lat} longitude={addedPoint.lng} />
             </Popup>
           </Marker>
         )}
       {routeCoords.length > 0 && (
         <Polyline
-          positions={routeCoords} // Inverser l'ordre pour Leaflet
+          positions={routeCoords} 
           color="red"
           weight={4}
         >

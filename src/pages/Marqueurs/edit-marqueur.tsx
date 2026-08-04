@@ -17,13 +17,13 @@ import { useUpdateMarqueur } from "@/hooks/useUpdateMarqueur"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { extractFileName } from "@/lib/utils"
+import { Flag } from "lucide-react"
 
 function EditMarqueur({ id, onSuccess }: { id: string; onSuccess: () => void }) {
   const { update, loading } = useUpdateMarqueur()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const [imageFileName, setImageFileName] = useState<string | null>(null)
- //const [marqueur, setMarqueur] = useState<CreateMarqueurData| null>(null)
  const { register, handleSubmit, reset } = useForm<CreateMarqueurData>()
 
   useEffect(() => {
@@ -41,13 +41,12 @@ function EditMarqueur({ id, onSuccess }: { id: string; onSuccess: () => void }) 
         reset({
           name: data.name,
           description: data.description,
-          file: data.file, // pour l'affichage,
+          file: data.file, 
         })
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erreur inconnue"
         setError(message)
         toast.error(message)
-        //console.error("Erreur lors du chargement du marqueur", err)
       }
     }
 
@@ -57,6 +56,7 @@ function EditMarqueur({ id, onSuccess }: { id: string; onSuccess: () => void }) 
   const onSubmit = async (data: CreateMarqueurData) => {
     await update(id, data)
     onSuccess()
+    window.location.reload();
   }
 
   // Affichage de l'erreur si ID manquant ou chargement échoué
@@ -80,6 +80,8 @@ function EditMarqueur({ id, onSuccess }: { id: string; onSuccess: () => void }) 
             <FloatingInput
                label="Nom"
               {...register("name")}
+               labelclassName="peer-focus:bg-white  dark:peer-focus:text-emerald-400 dark:peer-focus:bg-background/80 "
+              icon={<Flag  className="h-4 w-4 text-emerald-400" />}
             />
           </Field>
           <Field>
@@ -96,11 +98,9 @@ function EditMarqueur({ id, onSuccess }: { id: string; onSuccess: () => void }) 
         </FieldGroup>
         <div className="grid grid-cols-2 gap-2">
                   <Field>
-                  <Button
-                  type="button"
-                    variant="outline"
-                    onClick={() => navigate(-1)}
-                   /> 
+                  <Button variant="outline" onClick={() => navigate(-1)} className='w-auto' >
+                  Annuler
+                </Button>
                   </Field>
         <ButtonMain actioname="main"  disabled={loading} label="Modifier le Marqueur" type="submit" />  
        
