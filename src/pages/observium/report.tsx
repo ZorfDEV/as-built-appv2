@@ -320,7 +320,10 @@ const isValidRange = Boolean(dateFrom && dateTo && dateFrom <= dateTo && dateTo 
 
       setReport(data);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      // Message renvoyé par le backend ({ error }) plutôt que "Request failed with status code 500"
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error ?? err.message
+        : err instanceof Error ? err.message : "Erreur inconnue";
       toast.error(`Impossible de récupérer le rapport : ${message}`);
       setError(`Impossible de récupérer le rapport : ${message}`);
     } finally {
